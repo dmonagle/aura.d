@@ -3,16 +3,17 @@
 	"description": "A framework that sits on top of vibe.d.",
 	"copyright": "Copyright © 2014, David Monagle",
 	"authors": ["David Monagle"],
-    "version": "0.1.0",
 	"dependencies": {
         "vibe-d": ">=0.7.21",
+		"elasticsearch-d": ">=1.0.0-alpha.1",
         "colorize": ">=1.0.5"
 	},
-    "license": "MIT",
-    "configurations": [
-        {
-            "targetType": "library",
-            "name": "aura-d"
-        }
-    ]
+	"version": "0.1.0",
+	"license": "MIT",
+	"configurations": [
+		{
+			"targetType": "library",
+			"name": "aura-d"
+		}
+	],
 }

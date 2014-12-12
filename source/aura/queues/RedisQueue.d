@@ -48,7 +48,10 @@ private:
 }
 
 unittest {
-	auto q = RedisQueue("testQueue");
+	auto redisClient = new RedisClient();
+	auto db = redisClient.getDatabase(0);
+
+	auto q = RedisQueue("unittest/testQueue", db);
 	q.destroy;
 	assert(q.length == 0);
 	assert(q.pop.isNull);

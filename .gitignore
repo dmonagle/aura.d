@@ -4,3 +4,4 @@ __dummy.html
 *.o
 *.obj
 libaura-d.a
+__test__aura-d__
