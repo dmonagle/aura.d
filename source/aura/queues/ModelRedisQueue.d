@@ -8,9 +8,10 @@ import aura.queues.ModelQueue;
 
 // Monitors a RedisQueue for model Ids and adds the model to an underlying ModelQueue
 class ModelRedisQueue(T, alias pred = null) {
-	this(string name) {
-		_name = name;
-		_redisQueue = RedisQueue(name);
+	this(string redisKey, RedisDatabase database) {
+		_database = database;
+		_redisKey = redisKey;
+		_redisQueue = RedisQueue(_redisKey, _database);
 		_modelQueue = new ModelQueue!T;
 		runTask(&runQueue);
 	}
@@ -18,9 +19,9 @@ class ModelRedisQueue(T, alias pred = null) {
 private:
 	void runQueue() {
 		scope(exit) {
-			logInfo("Stopping %s(%s) queue".color(fg.light_red), _name, T.stringof);
+			logInfo("Stopping %s(%s) queue".color(fg.light_red), _redisKey, T.stringof);
 		}
-		logInfo("Starting %s(%s) queue".color(fg.light_green), _name, T.stringof);
+		logInfo("Starting %s(%s) queue".color(fg.light_green), _redisKey, T.stringof);
 		_modelQueue.start((T model) {
 			logDebug(model._id.toString.color(fg.yellow));
 			static if (!is(typeof(pred) == typeof(null))) pred(model);
@@ -47,7 +48,8 @@ private:
 		}
 	}
 	
-	string _name;
+	string _redisKey;
+	RedisDatabase _database;
 	RedisQueue _redisQueue;
 	ModelQueue!T _modelQueue;
 }

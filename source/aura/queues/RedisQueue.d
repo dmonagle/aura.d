@@ -6,11 +6,11 @@ import vibe.db.redis.redis;
 /// A Redis based FIFO queue that will only accept unique values
 struct RedisQueue {
 	@property string setName() const {
-		return _queueName ~ "/queueSet";
+		return _redisKey ~ "/queueSet";
 	}
 	
 	@property string listName() const {
-		return _queueName ~ "/queueList";
+		return _redisKey ~ "/queueList";
 	}
 
 	@property long length() {
@@ -38,13 +38,13 @@ struct RedisQueue {
 	}
 
 	this(string queueName, RedisDatabase database) {
-		_queueName = queueName;
+		_redisKey = queueName;
 		_database = database;
 	}
 
 private:
 	RedisDatabase _database;
-	string _queueName;
+	string _redisKey;
 }
 
 unittest {
