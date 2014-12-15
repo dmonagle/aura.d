@@ -5,3 +5,4 @@ __dummy.html
 *.obj
 libaura-d.a
 __test__aura-d__
+**/.DS_Store

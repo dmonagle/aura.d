@@ -6,6 +6,7 @@ import colorize;
 import aura.queues.RedisQueue;
 import aura.queues.ModelQueue;
 
+
 // Monitors a RedisQueue for model Ids and adds the model to an underlying ModelQueue
 class ModelRedisQueue(T) {
 	this(string redisKey, RedisDatabase database, void delegate(T model) modelAction) {
@@ -27,8 +28,10 @@ private:
 		
 		while (true) {
 			// If there is anything in the redisQueue and there are available workers
-			while (_redisQueue.length && _modelQueue.workersAvailable) {
+			auto rLength =_redisQueue.length;
+			while (rLength && _modelQueue.workersAvailable) {
 				auto id = _redisQueue.pop;
+				logDebug("Popped %s from %s(%s) queue(%s)".color(fg.light_yellow), id, _redisKey, T.stringof, rLength);
 				if (!id.isNull) {
 					BsonObjectID bId;
 					try {
@@ -37,11 +40,12 @@ private:
 						if (model) _modelQueue.queue ~= model;
 					}
 					catch (Exception e) {
-						logError(T.stringof ~ " push queue id '%s': %s".color(fg.light_red), id, e.msg);
+						logError(T.stringof ~ " push queue: %s".color(fg.light_red), e.msg);
 					}
 				}
+				rLength =_redisQueue.length;
 			}
-			sleep(2.seconds);
+			sleep(500.msecs);
 		}
 	}
 	

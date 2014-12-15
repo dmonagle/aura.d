@@ -23,7 +23,7 @@ class ModelQueue(Model) {
 	}
 
 	@property bool workersAvailable() const {
-		return workersBusy < workerCount;
+		return (workerCount - workersBusy) > length;
 	}
 	
 	@property ulong length() const {
@@ -36,7 +36,7 @@ class ModelQueue(Model) {
 				_workersBusy++;
 				auto model = queue.front;
 				queue.popFront();
-				logInfo("%s worker: Queue: %s Processing: %s".color(fg.light_magenta), Model.stringof, queue.length, model.to!string);
+				logInfo("%s worker: Queue: %s Processing...".color(fg.light_magenta), Model.stringof, queue.length);
 
 				try {
 					_modelAction(model);
@@ -47,7 +47,7 @@ class ModelQueue(Model) {
 				_workersBusy--;
 			} 
 			else {
-				sleep(2.seconds);
+				sleep(200.msecs);
 			}
 		}
 		logInfo("%s worker finishing".color(fg.magenta), Model.stringof);
