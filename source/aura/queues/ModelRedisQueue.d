@@ -9,12 +9,12 @@ import aura.queues.ModelQueue;
 
 // Monitors a RedisQueue for model Ids and adds the model to an underlying ModelQueue
 class ModelRedisQueue(T) {
-	this(string redisKey, RedisDatabase database, void delegate(T model) modelAction) {
+	this(string redisKey, RedisDatabase database, void delegate(T model) modelAction, ulong workerCount = 5) {
 		_modelAction = modelAction;
 		_database = database;
 		_redisKey = redisKey;
 		_redisQueue = RedisQueue(_redisKey, _database);
-		_modelQueue = new ModelQueue!T;
+		_modelQueue = new ModelQueue!T(workerCount);
 		runTask(&runQueue);
 	}
 	
