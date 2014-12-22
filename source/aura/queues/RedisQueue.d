@@ -197,6 +197,8 @@ import colorize;
 struct RedisWorkerQueue {
 	this(RedisDatabase database, string queueName, Duration queueDuration = 24.hours, string processingLockKey = "") {
 		_queue = RedisProcessingQueue(database, queueName, queueDuration, processingLockKey);
+		_workerSkew = 200.msecs;
+		_workerCheckEvery = 2.seconds;
 	}
 
 	void worker() {
@@ -213,7 +215,7 @@ struct RedisWorkerQueue {
 				}
 				_workersBusy--;
 				logInfo("Queue item finished");
-			})) sleep(200.msecs);
+			})) sleep(_workerCheckEvery);
 		}
 		logInfo("Worker finishing".color(fg.magenta));
 	}
@@ -222,7 +224,10 @@ struct RedisWorkerQueue {
 		if (!_processing) {
 			_processing = true;
 			_action = action;
-			foreach (i; 0 .. workerCount) _tasks ~= runTask(&worker);
+			foreach (i; 0 .. workerCount) {
+				_tasks ~= runTask(&worker);
+				sleep(_workerSkew);
+			}
 		}
 	}
 
@@ -252,6 +257,8 @@ private:
 	Task[] _tasks;
 	RedisProcessingQueue _queue;
 	void delegate(string) _action;
+	Duration _workerSkew;
+	Duration _workerCheckEvery;
 }
 
 // This unit test is commented out by default as it takes significant time to run. Should probably be run based on a version
