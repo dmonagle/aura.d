@@ -133,6 +133,11 @@ struct RedisProcessingQueue {
 		}
 		return false;
 	}
+
+	bool lockedForProcessing(string id) {
+		auto pLock = RedisScopedLock(_database, processingLockKey(id));
+		return pLock.locked;
+	}
 	
 	bool process(scope void delegate(string) action = null) {
 		Nullable!string returnString = _database.lpop!(Nullable!string)(listKey); 
