@@ -1,10 +1,45 @@
 ﻿module aura.util.is_blank;
 
-class is_blank
-{
-	this()
-	{
-		// Constructor code
+import std.traits;
+
+bool isBlank(alias pred = (v) => false, T)(ref T source) {
+	static if (__traits(compiles, source.isNull)) {
+		if (source.isNull) return true;
 	}
+	
+	static if (is(T : string)) {
+		if (source.length == 0) return true;
+	}
+	
+	return pred(source);
 }
 
+unittest {
+	import std.typecons;
+	
+	Nullable!string s;
+	
+	assert(s.isBlank);
+	s = "";
+	assert(s.isBlank);
+	s = "Hello";
+	assert(!s.isBlank);
+}
+
+unittest {
+	import std.typecons;
+	
+	enum Test {
+		empty,
+		notEmpty
+	}
+	
+	Nullable!Test nTest;
+	Test test;
+	
+	assert(nTest.isBlank);
+	assert(!test.isBlank);
+	assert(test.isBlank!(v => v == Test.empty));
+	assert(!test.isBlank!(v => v == Test.notEmpty));
+	
+}
