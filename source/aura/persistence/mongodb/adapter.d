@@ -186,7 +186,6 @@ class MongoAdapter : PersistenceAdapter {
 					alias member = TypeTuple!(__traits(getMember, M, memberName));
 					alias embeddedUDA = findFirstUDA!(EmbeddedAttribute, member);
 					static if (embeddedUDA.found) {
-						pragma(msg, memberName);
 						auto embeddedModel = __traits(getMember, model, memberName);
 						if (embeddedModel) {
 							static if (isArray!(typeof(embeddedModel))) {

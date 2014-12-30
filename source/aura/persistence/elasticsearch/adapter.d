@@ -51,12 +51,11 @@ class EsAdapter : PersistenceAdapter {
 	void ensureIndex(M)(string content, bool drop = false) {
 		auto name = fullName(modelMeta!M.containerName);
 		if (drop) {
-			logInfo("Dropping Elasticsearch Index: '%s'", name);
 			deleteIndex!M;
 		}
 		if (!_client.indexExists(name)) {
-			_client.createIndex(name, content);
 			logInfo("Creating Elasticsearch Index: '%s'", name);
+			_client.createIndex(name, content);
 		}
 	}
 
