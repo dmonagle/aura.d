@@ -1,10 +1,3 @@
-﻿module aura.query.elasticsearch.package;
+﻿module aura.query.elasticsearch;
 
-class package
-{
-	this()
-	{
-		// Constructor code
-	}
-}
-
+public import aura.query.elasticsearch.es_bool;

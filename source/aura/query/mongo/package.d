@@ -1,10 +1,4 @@
-﻿module aura.query.mongo.package;
+﻿module aura.query.mongo;
 
-class package
-{
-	this()
-	{
-		// Constructor code
-	}
-}
-
+public import aura.query.mongo.and;
+public import aura.query.mongo.or;
