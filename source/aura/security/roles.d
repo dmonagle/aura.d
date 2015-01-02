@@ -19,7 +19,11 @@ mixin template Roles(RoleEnum) {
 	void addRole(RoleEnum r) {
 		if (!roles.canFind(r)) roles ~= r;
 	}
-	
+
+	void addRoles(RoleEnum[] roles ...) {
+		foreach(role; roles) addRole(role);
+	}
+
 	/// Remove a role from a user
 	void removeRole(RoleEnum r) {
 		roles = roles.remove!((role) => role == r);
