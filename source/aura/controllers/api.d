@@ -30,7 +30,10 @@ struct ApiModelParams {
 	Json params;
 	const Bson originalObject;
 	
-	private Json _filteredParams;
+	private {
+		Json _filteredParams;
+		string[] _idFields;
+	}
 	
 	this (Json params, const Bson originalObject = Bson.emptyObject) {
 		this.params = params;
@@ -61,10 +64,19 @@ struct ApiModelParams {
 		auto bsonField = updates[field];
 		return updates[field] != originalObject[field];
 	}
+
+	// Tags a field as an Id so when updates are generated it converts the JSON string into an ID
+	void tagIdField(string fieldName) {
+		_idFields ~= fieldName;
+	}
 	
 	/// Returns a Bson representation of the updates to be applied to the original object
 	@property Bson updates() {
 		auto u = Bson.fromJson(_filteredParams);
+		foreach(field; _idFields) {
+			if (u[field].type == Bson.Type.string)
+				u[field] = BsonObjectID.fromString(u[field].get!string);
+		}
 		return u;
 	}
 	
