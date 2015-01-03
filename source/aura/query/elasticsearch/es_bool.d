@@ -2,10 +2,8 @@
 
 import aura.data.json;
 
-class EsBool : JsonBuilder {
-	mixin JsonBuilderBase!EsBool;
-	
-	protected Json _json;
+class EsBool : JsonBuilderBase {
+	mixin JsonBuilderCore!EsBool;
 	
 	this() {
 		_json = Json.emptyObject;
@@ -19,6 +17,10 @@ class EsBool : JsonBuilder {
 		return this;
 	}
 	
+	EsBool must(T : string)(T criteria) {
+		return must(criteria.parseJsonString);
+	}
+	
 	EsBool must(T)(T criteria) {
 		return must(serializeToJson(criteria));
 	}
@@ -28,6 +30,10 @@ class EsBool : JsonBuilder {
 		return this;
 	}
 	
+	EsBool must_not(T : string)(T criteria) {
+		return must_not(criteria.parseJsonString);
+	}
+
 	EsBool must_not(T)(T criteria) {
 		return must_not(serializeToJson(criteria));
 	}
@@ -37,6 +43,10 @@ class EsBool : JsonBuilder {
 		return this;
 	}
 	
+	EsBool should(T : string)(T criteria) {
+		return should(criteria.parseJsonString);
+	}
+
 	EsBool should(T)(T criteria) {
 		return should(serializeToJson(criteria));
 	}
@@ -63,7 +73,7 @@ unittest {
 	import std.stdio;
 	import colorize;
 	
-	auto query = EsBool.build((b) {
+	auto query = EsBool((b) {
 		assert(b.empty);
 		b.must(["David": "Ginny"]);
 		b.should(["Tim": "Alison"]);
