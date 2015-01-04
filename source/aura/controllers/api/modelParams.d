@@ -1,4 +1,4 @@
-﻿module aura.controllers.api;
+﻿module aura.controllers.api.modelParams;
 
 import std.regex;
 
@@ -8,23 +8,6 @@ import aura.data.json;
 import vibe.web.web;
 import vibe.http.router;
 import vibe.core.log;
-
-import colorize;
-
-enum pathId = before!(pathComponentPred!(0))("_id");
-
-/// Returns the path component at the specified position from the end (starting at 0)
-string pathComponentPred(int position)(HTTPServerRequest req, HTTPServerResponse res) {
-	auto m = matchAll(req.requestURL, ctRegex!`\/([^\/\?]*)`);
-	enforceHTTP(m, HTTPStatus.unprocessableEntity, "Could not locate required path parameter");
-	string[] pathComponents;
-	foreach(match; m) {
-		pathComponents ~= match[1];
-	}
-	string captured = pathComponents[$ - (position + 1)];
-	logDebug("Capturing position %s from %s gives us %s", position, req.requestURL.color(fg.yellow), captured.color(fg.cyan));
-	return captured;
-}
 
 struct ApiModelParams {
 	Json params;
@@ -64,7 +47,7 @@ struct ApiModelParams {
 		auto bsonField = updates[field];
 		return updates[field] != originalObject[field];
 	}
-
+	
 	// Tags a field as an Id so when updates are generated it converts the JSON string into an ID
 	void tagIdField(string fieldName) {
 		_idFields ~= fieldName;
