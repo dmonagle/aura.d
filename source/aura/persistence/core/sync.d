@@ -36,9 +36,8 @@ struct SyncMeta {
 	@property bool synced() {
 		foreach(serviceName, serviceMeta; services) {
 			if (serviceMeta.needsSync(_syncHash)) return false;
-			return true;
 		}
-		return false;
+		return true;
 	}
 	
 	/// This only exists so the serializer deals with the synced property
@@ -49,9 +48,13 @@ struct SyncMeta {
 		return services[serviceName];
 	}
 	
+	bool serviceExists(string serviceName) const {
+		return cast(bool)(serviceName in services);
+	}
+	
 	/// Returns the specified serviceName, creating it if necessary
 	ref SyncServiceMeta ensureService(string serviceName) {
-		if (serviceName !in services) {
+		if (!serviceExists(serviceName)) {
 			auto serviceMeta = SyncServiceMeta();
 			services[serviceName] = serviceMeta;
 		}
@@ -66,7 +69,9 @@ struct SyncMeta {
 	}
 	
 	/// Returns true if the specified service does not match the given syncHash
+	/// Returns false if the service doesn't exist or is up to date
 	bool serviceNeedsSync(string serviceName, SyncHash syncHash) {
+		if (!serviceExists(serviceName)) return false;
 		auto service = this[serviceName];
 		return service.needsSync(syncHash);
 	}
@@ -106,6 +111,10 @@ struct ModelSyncMeta(M) {
 		return _syncMeta.save();
 	}
 	
+	@property bool changed() const {
+		return cast(bool)(_syncMeta._syncHash != _model.syncHash);
+	}
+	
 	@property bool synced() {
 		_syncMeta._syncHash = _model.syncHash;
 		return _syncMeta.synced;
@@ -132,6 +141,7 @@ struct ModelSyncMeta(M) {
 	}
 	
 	bool serviceNeedsSync(string serviceName) {
+		if (!_syncMeta.serviceExists(serviceName)) return false;
 		auto service = this[serviceName];
 		return service.needsSync(_model.syncHash);
 	}
@@ -200,7 +210,10 @@ unittest {
 	// also we make sure the services we require exist
 	auto sync = modelSync(u, "webService1", "webService2");
 	
+	assert(!sync.serviceNeedsSync("undefinedService"));
+	
 	// Both of the new services need syncing
+	assert(sync.synced);
 	assert(sync.serviceNeedsSync("webService1"));
 	assert(sync.serviceNeedsSync("webService2"));
 	
@@ -267,4 +280,5 @@ unittest {
 	u.dateTime = Clock.currTime + 1.minutes;
 	assert(savedHash == u.syncHash);
 }
+
 
