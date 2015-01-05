@@ -3,4 +3,4 @@
 import aura.query.mongo.list;
 
 
-alias MongoAnd = MongoList!"$or";
+alias MongoOr = MongoList!"$or";
