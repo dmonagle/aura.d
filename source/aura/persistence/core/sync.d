@@ -213,7 +213,7 @@ unittest {
 	assert(!sync.serviceNeedsSync("undefinedService"));
 	
 	// Both of the new services need syncing
-	assert(sync.synced);
+	assert(!sync.synced);
 	assert(sync.serviceNeedsSync("webService1"));
 	assert(sync.serviceNeedsSync("webService2"));
 	
