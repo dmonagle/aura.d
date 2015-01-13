@@ -155,7 +155,7 @@ class MongoAdapter : PersistenceAdapter {
 
 		Bson bsonModel;
 
-		ensureEmbeddedIds(model);
+		ensureEmbeddedMongoIds(model);
 		if(model.isNew) {
 			model.ensureId();
 			bsonModel = serializeToBson(model);
@@ -177,26 +177,30 @@ class MongoAdapter : PersistenceAdapter {
 		collection.remove(["_id": model.id]);
 		return true;
 	}
+}
 
-	void ensureEmbeddedIds(M)(ref M model) {
-		foreach (memberName; __traits(allMembers, M)) {
-			//static if (isRWPlainField!(M, memberName) || isRWField!(M, memberName)) {
-			static if (is(typeof(__traits(getMember, model, memberName)))) {
-				static if (__traits(getProtection, __traits(getMember, model, memberName)) == "public") {
-					alias member = TypeTuple!(__traits(getMember, M, memberName));
-					alias embeddedUDA = findFirstUDA!(EmbeddedAttribute, member);
-					static if (embeddedUDA.found) {
-						auto embeddedModel = __traits(getMember, model, memberName);
-						if (embeddedModel) {
-							static if (isArray!(typeof(embeddedModel))) {
-								foreach(ref m; embeddedModel) {
-									m.ensureId(); // Ensure the ID of each model in the array
-									ensureEmbeddedIds(m); // Ensure any recursive Ids
-								}
-							} else {
-								embeddedModel.ensureId();
-								ensureEmbeddedIds(embeddedModel);
+void ensureEmbeddedMongoIds(M)(ref M model) {
+	foreach (memberName; __traits(allMembers, M)) {
+		//static if (isRWPlainField!(M, memberName) || isRWField!(M, memberName)) {
+		static if (is(typeof(__traits(getMember, model, memberName)))) {
+			static if (__traits(getProtection, __traits(getMember, model, memberName)) == "public") {
+				alias member = TypeTuple!(__traits(getMember, M, memberName));
+				alias embeddedUDA = findFirstUDA!(EmbeddedAttribute, member);
+				static if (embeddedUDA.found) {
+					auto embeddedModel = __traits(getMember, model, memberName);
+					static if (is(embeddedModel == class)) 
+						immutable bool validModel = cast(bool)embeddedModel;
+					else
+						immutable bool validModel = true;
+					if (validModel) {
+						static if (isArray!(typeof(embeddedModel))) {
+							foreach(ref m; embeddedModel) {
+								m.ensureId(); // Ensure the ID of each model in the array
+								ensureEmbeddedMongoIds(m); // Ensure any recursive Ids
 							}
+						} else {
+							embeddedModel.ensureId();
+							ensureEmbeddedMongoIds(embeddedModel);
 						}
 					}
 				}
@@ -204,6 +208,7 @@ class MongoAdapter : PersistenceAdapter {
 		}
 	}
 }
+
 
 mixin template MongoModel(ModelType, string cName = "") {
 	private {
