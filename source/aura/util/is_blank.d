@@ -6,13 +6,9 @@ bool isBlank(T)(ref T source) {
 	static if (__traits(compiles, source.isNull)) {
 		if (source.isNull) return true;
 	}
-	
-	static if (is(T : string)) {
+
+	static if (is(T : string) || isArray!T) {
 		if (source.length == 0) return true;
-	}
-	
-	static if (isNumeric!T) {
-		if (source == 0) return true;
 	}
 
 	return false;
@@ -42,8 +38,14 @@ unittest {
 	Test test;
 	
 	assert(nTest.isBlank);
+	nTest = Test.notEmpty;
+	assert(!nTest.isBlank);
 	assert(!test.isBlank);
-	assert(test.isBlank!(v => v == Test.empty));
-	assert(!test.isBlank!(v => v == Test.notEmpty));
-	
+
+	string s;
+	assert(s.isBlank);
+	s = "1";
+	assert(!s.isBlank);
+
+
 }
