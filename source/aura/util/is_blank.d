@@ -2,7 +2,7 @@
 
 import std.traits;
 
-bool isBlank(alias pred = (v) => false, T)(ref T source) {
+bool isBlank(T)(ref T source) {
 	static if (__traits(compiles, source.isNull)) {
 		if (source.isNull) return true;
 	}
@@ -11,7 +11,11 @@ bool isBlank(alias pred = (v) => false, T)(ref T source) {
 		if (source.length == 0) return true;
 	}
 	
-	return pred(source);
+	static if (isNumeric!T) {
+		if (source == 0) return true;
+	}
+
+	return false;
 }
 
 unittest {
