@@ -179,6 +179,7 @@ class MongoAdapter : PersistenceAdapter {
 	}
 }
 
+import aura.util.null_bool;
 void ensureEmbeddedMongoIds(M)(ref M model) {
 	foreach (memberName; __traits(allMembers, M)) {
 		//static if (isRWPlainField!(M, memberName) || isRWField!(M, memberName)) {
@@ -188,11 +189,7 @@ void ensureEmbeddedMongoIds(M)(ref M model) {
 				alias embeddedUDA = findFirstUDA!(EmbeddedAttribute, member);
 				static if (embeddedUDA.found) {
 					auto embeddedModel = __traits(getMember, model, memberName);
-					static if (is(embeddedModel == class)) 
-						immutable bool validModel = cast(bool)embeddedModel;
-					else
-						immutable bool validModel = true;
-					if (validModel) {
+					if (embeddedModel.isNotNull) {
 						static if (isArray!(typeof(embeddedModel))) {
 							foreach(ref m; embeddedModel) {
 								m.ensureId(); // Ensure the ID of each model in the array
