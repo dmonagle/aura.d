@@ -54,12 +54,12 @@ Json extractJSParam(DictionaryList!(string,true,16L) query, string paramName) {
 	return json;
 }
 
-/// Returns the path component at the specified position from the end (starting at 0)
+/// Extracts a query parameter in jQuery format into a Json Object
 Json jsParamPred(string paramName)(HTTPServerRequest req, HTTPServerResponse res) {
 	return req.query.extractJSParam(paramName);
 }
 
-/// Returns the path component at the specified position from the end (starting at 0)
+/// Extracts a query parameter in jQuery format into a Json format and deserializes into template type
 T jsParamPred(T, string paramName)(HTTPServerRequest req, HTTPServerResponse res) {
 	T returnStruct;
 
