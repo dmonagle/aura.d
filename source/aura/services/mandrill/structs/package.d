@@ -6,3 +6,4 @@ public import aura.services.mandrill.structs.Attachment;
 public import aura.services.mandrill.structs.User;
 public import aura.services.mandrill.structs.recipients;
 public import aura.services.mandrill.structs.templates;
+public import aura.services.mandrill.structs.merge_vars;

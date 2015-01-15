@@ -18,15 +18,25 @@ unittest {
 		});
 */
 
+	/*
 	Message m;
-	m.from_email = "support@projectflow.io";
-	m.from_name = "Project Flow Support";
+	//m.from_email = "support@projectflow.io";
+	//m.from_name = "Project Flow Support";
 	m.to ~= Recipient("david@monagle.com.au", "David Monagle");
+	m.merge_language = MergeLanguage.handlebars;
+	m.merge_vars ~= RecipientMergeVar(
+		"david@monagle.com.au",
+		[
+			MergeVar("recipientFullName", Json("My Favourite Customer")),
+			MergeVar("senderFullName", Json("David Monagle")),
+		]
+	);
 	m.subject = "Test Mandrill";
-	m.html = "<h1>This is a cool email</h1>";
+	//m.html = "<h1>This is a cool email</h1>";
 	m.text = "This is a cool email";
 
-	auto results = mandrillTest.sendTemplate("welcome", m);
-	
+	auto results = mandrillTest.sendTemplate("test", m);
+	writeln(results.serializeToJson.toPrettyString);
+	*/
 }
 
