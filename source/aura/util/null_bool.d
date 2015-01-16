@@ -12,6 +12,30 @@ bool isFalse(T)(T b) {
 	return !isTrue(b);
 }
 
+unittest {
+	bool b;
+	
+	assert(!isTrue(b));
+	assert(isFalse(b));
+	
+	b = true;
+	assert(isTrue(b));
+	assert(!isFalse(b));
+
+	Nullable!bool nb;
+
+	assert(!isTrue(nb));
+	assert(isFalse(nb));
+
+	nb = false;
+	assert(!isTrue(nb));
+	assert(isFalse(nb));
+	
+	nb = true;
+	assert(isTrue(nb));
+	assert(!isFalse(nb));
+}
+
 bool isNull(T)(ref T value) {
 	static if (is(T == class))
 		return value ? false : true;
