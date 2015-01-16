@@ -3,14 +3,13 @@
 public import std.typecons;
 import std.traits;
 
-bool isTrue(Nullable!bool b) {
+bool isTrue(T)(T b) {
 	if (b.isNull) return false;
-	return b.get;
+	return b == true;
 }
 
-bool isFalse(Nullable!bool b) {
-	if (b.isNull) return true;
-	return !b.get;
+bool isFalse(T)(T b) {
+	return !isTrue(b);
 }
 
 bool isNull(T)(ref T value) {
