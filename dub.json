@@ -6,7 +6,8 @@
 	"dependencies": {
         "vibe-d": ">=0.7.21",
 		"elasticsearch-d": ">=1.0.0-alpha.1",
-        "colorize": ">=1.0.5"
+        "colorize": ">=1.0.5",
+        "dyaml": ">=0.5.0"
 	},
 	"version": "0.1.0",
 	"license": "MIT",
