@@ -1,7 +1,7 @@
 ﻿module aura.util.string_transforms;
 
 import std.uni;
-import std.regex;
+import std.algorithm;
 
 /*
  * This precomiled regex version does not work at compile time as regex uses malloc
@@ -65,4 +65,40 @@ unittest {
 	assert("get2HTTPResponseCode".snakeCase == "get2_http_response_code");
 	assert("HTTPResponseCode".snakeCase == "http_response_code");
 	assert("HTTPResponseCodeXYZ".snakeCase == "http_response_code_xyz");
+}
+
+/// Returns the camelcased version of the input string. 
+string camelCase(const string input, bool upper = false, dchar[] separaters = ['_']) {
+	string output;
+	bool upcaseNext = upper;
+	foreach(c; input) {
+		if (!separaters.canFind(c)) {
+			if (upcaseNext) {
+				output ~= c.toUpper;
+				upcaseNext = false;
+			}
+			else
+				output ~= c;
+		}
+		else {
+			upcaseNext = true;
+		}
+	}
+
+	return output;
+}
+
+unittest {
+	assert("c".camelCase == "c");
+	assert("c".camelCase(true) == "C");
+	assert("c_a".camelCase == "cA");
+	assert("ca".camelCase(true) == "Ca");
+	assert("camel".camelCase(true) == "Camel");
+	assert("camel_case".camelCase(true) == "CamelCase");
+	assert("camel_camel_case".camelCase(true) == "CamelCamelCase");
+	assert("camel2_camel2_case".camelCase(true) == "Camel2Camel2Case");
+	assert("get_http_response_code".camelCase == "getHttpResponseCode");
+	assert("get2_http_response_code".camelCase == "get2HttpResponseCode");
+	assert("http_response_code".camelCase(true) == "HttpResponseCode");
+	assert("http_response_code_xyz".camelCase(true) == "HttpResponseCodeXyz");
 }
