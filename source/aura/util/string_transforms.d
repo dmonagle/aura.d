@@ -88,6 +88,14 @@ string camelCase(const string input, bool upper = false, dchar[] separaters = ['
 	return output;
 }
 
+string camelCaseUpper(const string input) {
+	return camelCase(input, true);
+}
+
+string camelCaseLower(const string input) {
+	return camelCase(input, false);
+}
+
 unittest {
 	assert("c".camelCase == "c");
 	assert("c".camelCase(true) == "C");
