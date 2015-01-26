@@ -23,6 +23,10 @@ class PersistenceAdapter(M ...) : PersistenceAdapterInterface {
 		return _databaseName;
 	}
 
+	bool modelIsRegistered(M)() const {
+		return staticIndexOf!(M, ModelTypes) != -1;
+	}
+
 	@property string containerName(M)() {
 		alias index = staticIndexOf!(M, ModelTypes);
 		assert(index != -1, "Attempted to look up the container of a model that is not part of the adapter: " ~ M.stringof);

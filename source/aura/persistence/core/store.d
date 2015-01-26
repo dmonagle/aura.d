@@ -46,7 +46,9 @@ class PersistenceStore(A ...) {
 
 		foreach(index, AdapterType; AdapterTypes) {
 			auto adapter = cast(AdapterType)(_adapters[index]);
-			if (!adapter.save(model)) result = false;
+			if (adapter.modelIsRegistered!M) {
+				if (!adapter.save(model)) result = false;
+			}
 		}
 
 		return result;
