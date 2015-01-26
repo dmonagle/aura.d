@@ -7,20 +7,27 @@ import aura.util.string_transforms;
 import vibe.data.serialization;
 
 import std.typetuple;
+import std.traits;
 import std.conv;
 
 import std.stdio;
 import colorize;
 
+template adapterModels(A) {
+	alias adapterModels = A.ModelTypes;
+}
+
 class PersistenceStore(A ...) {
 	alias AdapterTypes = TypeTuple!A;
+	alias ModelTypes = NoDuplicates!(staticMap!(adapterModels, AdapterTypes));
+
 
 	// Make sure that each adapter is only added once
 	static assert (AdapterTypes.length == NoDuplicates!(AdapterTypes).length, "Store can not have more than one of the same type of adapter");
 
 	this() {
-		foreach(A; AdapterTypes) {
-			_adapters ~= new A();
+		foreach(int index, A; AdapterTypes) {
+			_adapters[index] = new A();
 		}
 		foreach(M; ModelTypes) {
 			writeln(M.stringof.color(fg.green));
@@ -56,15 +63,17 @@ class PersistenceStore(A ...) {
 
 
 	// Returns the store object for the given model
-	ref M[string][string] modelStore(M)() {
-		return mixin("_" ~ M.stringof.camelCaseLower ~ "Store");
+	ref ModelInterface[string][string] modelStore(M)() {
+		auto i = staticIndexOf!(M, ModelTypes);
+		assert(i != -1, "Attempted to look up store for unregistered model: " ~ M.stringof);
+		return _modelStore[i];
 	}
 
 	void inject(M : ModelInterface)(M m) {
 		modelStore!M[""][m.persistenceId] = m;
 		if (M.stringof in _indexMeta) {
 			auto meta = _indexMeta[M.stringof];
-			modelStore!M[meta.name][meta.getKey(m)] = m;
+ 			modelStore!M[meta.name][meta.getKey(m)] = m;
 		}
 	}
 
@@ -137,40 +146,12 @@ private:
 		string function(ModelInterface) getKey;
 	}
 
-	static string defineModelTypes() {
-		import std.string; 
-
-		string[] typeStrings;
-		foreach(A; AdapterTypes) {
-			foreach(M; A.ModelTypes) {
-				typeStrings ~= M.stringof;
-				pragma(msg, M.stringof.color(fg.light_magenta));
-			}
-		}
-
-		return "alias ModelTypes = NoDuplicates!(TypeTuple!(" ~ typeStrings.join(",") ~ "));";
-	}
-
-	static string defineModelStores() {
-		string code;
-
-		foreach(M; ModelTypes) {
-			code ~= M.stringof ~ "[string][string] _" ~ M.stringof.camelCaseLower ~ "Store;";
-		}
-
-		return code;
-	}
-
-	mixin(defineModelTypes);
-	mixin(defineModelStores);
-
-	PersistenceAdapterInterface[] _adapters;
-	// ModelType, Index, Id
-	string delegate(ModelInterface)[string] _modelPrimaryKeyDelegate;
+	PersistenceAdapterInterface[AdapterTypes.length] _adapters;
+	ModelInterface[string][string][ModelTypes.length] _modelStore;
 	IndexMeta[string] _indexMeta;
 }
 
-//version (unittest) {
+version (unittest) {
 	import aura.persistence.core.relations;
 
 	class TestModelBase : ModelInterface {
@@ -253,6 +234,6 @@ private:
 		assert(store.adapter!Adapter1.containerName!Company == "companies");
 		store.adapter!Adapter1.containerName!Company = "kompaniez";
 		assert(store.adapter!Adapter1.containerName!Company == "kompaniez");
+	}
 }
-//}
 

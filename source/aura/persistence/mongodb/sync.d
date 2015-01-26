@@ -3,7 +3,11 @@
 import aura.persistence.core;
 import aura.persistence.mongodb.model;
 
+import vibe.data.bson;
+
 import std.typecons;
+import std.datetime;
+
 public import std.digest.sha;
 
 /* This set of structs could certainly use some better methods of updating other than calling save

@@ -3,7 +3,7 @@
 import aura.util.string_transforms;
 import aura.util.inflections.en;
 
-string defineBelongsTo(S, M, string propertyName = "", string key = "", string foreignKey = "_id")() {
+string defineBelongsTo(S, M, string propertyName, string key, string foreignKey)() {
 	import std.string;
 	
 	static if (!propertyName.length) 
@@ -23,7 +23,7 @@ string defineBelongsTo(S, M, string propertyName = "", string key = "", string f
 	`, M.stringof, _propertyName, S.stringof, _key, foreignKey);
 }
 
-mixin template BelongsTo(S, M, string propertyName = "", string key = "", string foreignKey = "_id") {
+mixin template BelongsTo(S, M, string propertyName = "", string key = "", string foreignKey = "") {
 	static if (!is(M == class)) {
 		static assert(is(T : Nullable), "Belongs to type, " ~ T.stringof ~ ", must be a class or Nullable!");
 	}
@@ -31,7 +31,7 @@ mixin template BelongsTo(S, M, string propertyName = "", string key = "", string
 	mixin(defineBelongsTo!(S, M, propertyName, key, foreignKey));
 }
 
-string defineOuterBelongsTo(S, L, M, string propertyName = "", string key = "", string foreignKey = "_id")() {
+string defineOuterBelongsTo(S, L, M, string propertyName, string key, string foreignKey)() {
 	import std.string;
 	
 	static if (!propertyName.length) 
@@ -51,7 +51,7 @@ string defineOuterBelongsTo(S, L, M, string propertyName = "", string key = "", 
 	`, M.stringof, _propertyName, S.stringof, _key, foreignKey, L.stringof);
 }
 
-mixin template BelongsTo(S, L, M, string propertyName = "", string key = "", string foreignKey = "_id") {
+mixin template BelongsTo(S, L, M, string propertyName = "", string key = "", string foreignKey = "") {
 	static if (!is(M == class)) {
 		static assert(is(T : Nullable), "Belongs to type, " ~ T.stringof ~ ", must be a class or Nullable!");
 	}
