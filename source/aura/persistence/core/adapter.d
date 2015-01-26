@@ -23,13 +23,13 @@ class PersistenceAdapter(M ...) : PersistenceAdapterInterface {
 		return _databaseName;
 	}
 
-	bool modelIsRegistered(M)() const {
+	static bool modelIsRegistered(M)() {
 		return staticIndexOf!(M, ModelTypes) != -1;
 	}
 
 	@property string containerName(M)() {
 		alias index = staticIndexOf!(M, ModelTypes);
-		assert(index != -1, "Attempted to look up the container of a model that is not part of the adapter: " ~ M.stringof);
+		static assert(index != -1, "Attempted to look up the container of a model that is not part of the adapter: " ~ M.stringof);
 		string value = _modelContainers[index];
 		if (!value.length) {
 			value = (M.stringof).snakeCase.pluralize;
@@ -40,7 +40,7 @@ class PersistenceAdapter(M ...) : PersistenceAdapterInterface {
 	
 	@property void containerName(M)(const string name) {
 		alias index = staticIndexOf!(M, ModelTypes);
-		assert(index != -1, "Attempted to set the container of a model that is not part of the adapter: " ~ M.stringof);
+		static assert(index != -1, "Attempted to set the container of a model that is not part of the adapter: " ~ M.stringof);
 		_modelContainers[index] = name;
 	}
 	

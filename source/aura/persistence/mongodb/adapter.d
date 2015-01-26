@@ -108,21 +108,23 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 	}
 	
 	/// Executes the the given query on the models container and calls the delegate with the deserialised model for each match.
-	void queryModel(ModelType, Q)(Q query, scope void delegate(ModelType model) pred = null, uint limit = 0) {
+	void queryModel(ModelType : ModelInterface, S, Q)(S store, Q query, scope void delegate(ModelType model) pred = null, uint limit = 0) {
 		import std.array;
 		import std.algorithm;
 		
 		this.find!ModelType(query, 
 			(bsonModel) {
-				ModelType model;
+				ModelType model = store.findInStore(bsonModel._id.to!string);
+				auto injectInStore = model ? false : true;
 				deserializeBson(model, bsonModel);
+				if (injectInStore) store.inject(model);
 				if (pred) pred(model);
 			}
 			, limit);
 	}
 	
 	/// Returns an array of deserialized models matching the list of ids given
-	ModelType[] findModel(ModelType, string key = "_id", IdType)(IdType[] ids ...) {
+	ModelType[] findModel(ModelType, string key = "", IdType)(const IdType[] ids ...) {
 		import std.array;
 		import std.algorithm;
 		
@@ -130,7 +132,7 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 		
 		auto collection = getCollection!ModelType;
 		
-		auto result = collection.find([key: ["$in": ids]]);
+		auto result = collection.find([(key.length ? key : "_id"): ["$in": ids]]);
 		
 		while (!result.empty) {
 			ModelType model;
@@ -143,9 +145,9 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 	}
 	
 	/// Returns a single deserialized model matching the given id
-	ModelType findModel(ModelType, string key = "_id", IdType)(IdType id) {
+	ModelType findModel(ModelType, string key = "", IdType)(const IdType id) {
 		import std.conv;
-		
+
 		auto models = findModel!(ModelType, key, IdType)([id]);
 		if (models.length) return models[0];
 		static if(is(ModelType == class)) return null;

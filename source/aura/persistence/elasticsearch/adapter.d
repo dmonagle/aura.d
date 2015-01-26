@@ -14,17 +14,13 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 	private {
 		Client _client;
 		string[] _hosts;
-
-		CacheContainer!Json _cache;
 	}
 
 	this() {
 	}
 
-	this(string applicationName, string environment, string[] hosts ...) {
-		super(applicationName, environment);
-		_hosts = hosts;
-	}
+	@property ref string[] hosts() { return _hosts; }
+	@property ref string[] hosts() { return _hosts; }
 
 	@property Client client() {
 		import vibe.core.log;
@@ -47,8 +43,13 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 		return _client;
 	}
 
+	/// Returns an index name for the specified container name by prepending the database name
+	string indexName(const string cName) {
+		return databaseName ~ "_" ~ cName;
+	}
+
 	void ensureIndex(M)(string content, bool drop = false) {
-		auto name = fullName(modelMeta!M.containerName);
+		auto name = indexName(containerName!M);
 		if (drop) {
 			deleteIndex!M;
 		}
@@ -59,7 +60,7 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 	}
 
 	void deleteIndex(M)() {
-		auto name = fullName(modelMeta!M.containerName);
+		auto name = indexName(containerName!M);
 		if (_client.indexExists(name)) {
 			logInfo("Deleting Elasticsearch Index: '%s'", name);
 			_client.deleteIndex(name);
@@ -68,7 +69,7 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 
 	void save(M)(const ref Json model) {
 		auto meta = modelMeta!M;
-		client.index(fullName(meta.containerName), meta.type, model._id.to!string, model.toString());
+		client.index(indexName(containerName!M), meta.type, model._id.to!string, model.toString());
 	}
 
 	void save(M)(M model) {
@@ -83,12 +84,10 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 	}
 
 	Json search(M)(string searchBody, Parameters params = Parameters()) {
-		auto meta = modelMeta!M;
-
 		params["body"] = searchBody;
-		params["index"] = fullName(meta.containerName);
+		params["index"] = indexName(containerName!M);
 		if ("type" !in params)
-			params["type"] = meta.type;
+			params["type"] = M.stringof;
 		else {
 			// If the type is specified as blank, remove the type
 			if (!params["type"].length) params.remove("type");

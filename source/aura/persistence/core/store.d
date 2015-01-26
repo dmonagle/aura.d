@@ -13,10 +13,6 @@ import std.conv;
 import std.stdio;
 import colorize;
 
-template adapterModels(A) {
-	alias adapterModels = A.ModelTypes;
-}
-
 class PersistenceStore(A ...) {
 	alias AdapterTypes = TypeTuple!A;
 	alias ModelTypes = NoDuplicates!(staticMap!(adapterModels, AdapterTypes));
@@ -48,7 +44,18 @@ class PersistenceStore(A ...) {
 		return cast(A)_adapters[index];
 	}
 
-	bool save(M)(const M model) {
+	/// Returns the adapters that have the model M registered
+	template adaptersFor(M) {
+		alias adaptersFor = Filter!(RegisteredModel!M.inAdapter, AdapterTypes);
+	}
+
+	template adapterFor(M) {
+		alias adapters = adaptersFor!M;
+		static assert(adapters.length, "No adapter found in store for model " ~ M.stringof);
+		alias adapterFor = adapter!(adapters[0]);
+	}
+
+	bool save(M)(M model) {
 		bool result = true;
 
 		foreach(index, AdapterType; AdapterTypes) {
@@ -60,7 +67,6 @@ class PersistenceStore(A ...) {
 
 		return result;
 	}
-
 
 	// Returns the store object for the given model
 	ref ModelInterface[string][string] modelStore(M)() {
@@ -75,6 +81,10 @@ class PersistenceStore(A ...) {
 			auto meta = _indexMeta[M.stringof];
  			modelStore!M[meta.name][meta.getKey(m)] = m;
 		}
+	}
+
+	void inject(M : ModelInterface)(M[] models) {
+		foreach(m; models) inject(m);
 	}
 
 	void addIndex(M)(string name, string function(ModelInterface) getKey) {
@@ -99,23 +109,17 @@ class PersistenceStore(A ...) {
 		return returnModel;
 	}
 
-	M[] query(M, A : PersistenceAdapterInterface, T)(const T query) {
-		M[] results;
+	M[] queryModel(M, A : PersistenceAdapterInterface, T)(const T query) {
+		M[] returnModels;
 
-		return results;
+		auto adapter = adapter!A;
+		adapter.queryModel!M(this, query, (model) { returnModels ~= model; });
+		inject!M(returnModels);
+
+		return returnModels;
 	}
 
-	M findOne(M, string index = "", T)(const T id) { 
-		M returnModel = findInStore!(M, index)(id);
-
-		if (!returnModel) {
-			// Do the adapter stuff here
-		}
-
-		return returnModel;
-	}
-
-	M[] findMany(M, string index = "", T)(const T[] ids ...) {
+	M[] findModel(M, string key = "", IdType)(const IdType[] ids ...) {
 		M[] returnModels;
 		T[] adapterSearchIds;
 
@@ -129,21 +133,42 @@ class PersistenceStore(A ...) {
 			}
 		}
 
-		// Search the adapter;
-		// Aggregate the results;
-		// Inject into the store
 		if (adapterSearchIds.length) {
-			//auto adapterModels = ;
-			//returnModels ~= adapterModels;
+			auto adapter = adapterFor!M;
+			auto adapterModels = adapter.findModel!(M, index)(adapterSearchIds);
+			returnModels ~= adapterModels;
+			inject!M(adapterModels);
 		}
 
 		return returnModels;
 	}
 
+	M findModel(M, string key = "", IdType)(const IdType id) {
+		M returnModel = findInStore!(M, key)(id);
+		
+		if (!returnModel) {
+			auto adapter = adapterFor!M;
+			returnModel = adapter.findModel!(M, key)(id);
+			if (returnModel) inject!M(returnModel);
+		}
+		
+		return returnModel;
+	}
+	
 private:
 	struct IndexMeta {
 		string name;
 		string function(ModelInterface) getKey;
+	}
+
+	template adapterModels(A) {
+		alias adapterModels = A.ModelTypes;
+	}
+
+	struct RegisteredModel(M) {
+		static template inAdapter(A) {
+			immutable bool inAdapter = staticIndexOf!(M, A.ModelTypes) != -1;
+		}
 	}
 
 	PersistenceAdapterInterface[AdapterTypes.length] _adapters;

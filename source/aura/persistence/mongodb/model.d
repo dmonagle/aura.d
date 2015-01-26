@@ -4,7 +4,7 @@ import aura.persistence.mongodb.adapter;
 import aura.persistence.core;
 import aura.util.null_bool;
 
-import vibe.data.bson;
+public import aura.data.bson;
 
 import std.datetime;
 
