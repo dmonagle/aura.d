@@ -34,6 +34,38 @@ unittest {
 struct Translation {
 	string singular;
 	string plural;
+
+	bool canPlural(const string input) {
+		if (input.length < singular.length) return false;
+		if (input[$ - singular.length..$].toLower == singular) {
+			return true;
+		}
+		return false;
+	}
+
+	string toPlural(const string input) {
+		assert(input.length >= singular.length);
+		return input[0..$-singular.length] ~ plural;
+	}
+
+	bool canSingular(const string input) {
+		if (input.length < plural.length) return false;
+		if (input[$ - plural.length..$].toLower == plural) {
+			return true;
+		}
+		return false;
+	}
+
+	string toSingular(const string input) {
+		assert(input.length >= plural.length);
+		return input[0..$-plural.length] ~ singular;
+	}
+}
+
+unittest {
+	auto t = Translation("person", "people");
+	assert(t.toPlural("oneperson") == "onepeople");
+	assert(t.toSingular("onepeople") == "oneperson");
 }
 
 class Inflector {
@@ -72,10 +104,10 @@ class Inflector {
 
 		foreach(irregular; _irregulars) {
 			static if (plural) {
-				if (lowerInput == irregular.singular) return irregular.plural;
+				if (irregular.canPlural(input)) return irregular.toPlural(input);
 			}
 			else {
-				if (lowerInput == irregular.plural) return irregular.singular;
+				if (irregular.canSingular(input)) return irregular.toSingular(input);
 			}
 		}
 

@@ -78,7 +78,7 @@ string camelCase(const string input, bool upper = false, dchar[] separaters = ['
 				upcaseNext = false;
 			}
 			else
-				output ~= c;
+				output ~= c.toLower;
 		}
 		else {
 			upcaseNext = true;
@@ -102,8 +102,10 @@ unittest {
 	assert("c_a".camelCase == "cA");
 	assert("ca".camelCase(true) == "Ca");
 	assert("camel".camelCase(true) == "Camel");
+	assert("Camel".camelCase(false) == "camel");
 	assert("camel_case".camelCase(true) == "CamelCase");
 	assert("camel_camel_case".camelCase(true) == "CamelCamelCase");
+	assert("caMel_caMel_caSe".camelCase(true) == "CamelCamelCase");
 	assert("camel2_camel2_case".camelCase(true) == "Camel2Camel2Case");
 	assert("get_http_response_code".camelCase == "getHttpResponseCode");
 	assert("get2_http_response_code".camelCase == "get2HttpResponseCode");
