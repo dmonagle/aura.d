@@ -52,26 +52,28 @@ private:
 	string _redisKey;
 }
 
+version (redis_unittest) {
 unittest {
-	auto redisClient = new RedisClient();
-	auto db = redisClient.getDatabase(0);
+		auto redisClient = new RedisClient("redis");
+		auto db = redisClient.getDatabase(0);
 
-	auto q = RedisQueue("unittest/testQueue", db);
-	q.clear;
-	assert(q.length == 0);
-	assert(q.pop.isNull);
-	assert(q.push("one"));
-	assert(q.length == 1);
-	assert(!q.push("one"));
-	assert(q.length == 1);
-	assert(q.push("two"));
-	assert(q.length == 2);
-	assert(q.pop() == "one");
-	assert(q.length == 1);
-	assert(q.pop() == "two");
-	assert(q.length == 0);
-	assert(q.pop.isNull);
-	q.clear;
+		auto q = RedisQueue("unittest/testQueue", db);
+		q.clear;
+		assert(q.length == 0);
+		assert(q.pop.isNull);
+		assert(q.push("one"));
+		assert(q.length == 1);
+		assert(!q.push("one"));
+		assert(q.length == 1);
+		assert(q.push("two"));
+		assert(q.length == 2);
+		assert(q.pop() == "one");
+		assert(q.length == 1);
+		assert(q.pop() == "two");
+		assert(q.length == 0);
+		assert(q.pop.isNull);
+		q.clear;
+	}
 }
 
 import aura.queues.redis_locks;
@@ -183,17 +185,19 @@ private:
 
 }
 
-unittest {
-	auto redisClient = new RedisClient();
-	auto db = redisClient.getDatabase(0);
-	
-	auto queue = RedisProcessingQueue(db, "unittest/testQueue");
-	queue.clear();
+version (redis_unittest) {
+	unittest {
+		auto redisClient = new RedisClient("redis");
+		auto db = redisClient.getDatabase(0);
+		
+		auto queue = RedisProcessingQueue(db, "unittest/testQueue");
+		queue.clear();
 
-	assert(queue.push("one"));
-	assert(!queue.push("one"), "Managed to add a second copy of an id already in the queue");
-	queue.process((id) {
-	});
+		assert(queue.push("one"));
+		assert(!queue.push("one"), "Managed to add a second copy of an id already in the queue");
+		queue.process((id) {
+		});
+	}
 }
 
 import vibe.core.log;
@@ -266,44 +270,43 @@ private:
 	Duration _workerCheckEvery;
 }
 
-// This unit test is commented out by default as it takes significant time to run. Should probably be run based on a version
-/*
-unittest {
-	import std.stdio;
-	import colorize;
-
-	writeln("Starting test".color(fg.light_blue));
-
-	auto redisClient = new RedisClient();
-	auto db = redisClient.getDatabase(0);
-
-	auto queue = RedisWorkerQueue(db, "unittest/testQueue");
-	queue.clear;
-	queue.runWorkers((id) {
-		writeln("Processing ID: " ~ id);
-		sleep(20.seconds);
-	}, 2);
-
-	writeln("Queue has been created. Pushing in 3 seconds".color(fg.light_green));
-	sleep(3.seconds);
-	assert(queue.push("one"));
-	sleep(2.seconds);
-	assert(queue.push("two"));
-	sleep(2.seconds);
-	// This should add but should fail to process immediately as it should still be processing
-	assert(queue.push("two"));
-	// The following should queue up
-	assert(queue.push("three"));
-	assert(queue.push("four"));
-	// These should refuse to add as they are already in the queue
-	assert(!queue.push("three"));
-	assert(!queue.push("four"));
-
-	writeln("Finished pushing".color(fg.cyan));
-	sleep(240.seconds);
-	queue.join();
-
-	writeln("Finishing test".color(fg.light_blue));
-
+version (redis_unittest) {
+	unittest {
+		import std.stdio;
+		import colorize;
+		
+		writeln("Starting test".color(fg.light_blue));
+		
+		auto redisClient = new RedisClient("redis");
+		auto db = redisClient.getDatabase(0);
+		
+		auto queue = RedisWorkerQueue(db, "unittest/testQueue");
+		queue.clear;
+		queue.runWorkers((id) {
+				writeln("Processing ID: " ~ id);
+				sleep(20.seconds);
+			}, 2);
+		
+		writeln("Queue has been created. Pushing in 3 seconds".color(fg.light_green));
+		sleep(3.seconds);
+		assert(queue.push("one"));
+		sleep(2.seconds);
+		assert(queue.push("two"));
+		sleep(2.seconds);
+		// This should add but should fail to process immediately as it should still be processing
+		assert(queue.push("two"));
+		// The following should queue up
+		assert(queue.push("three"));
+		assert(queue.push("four"));
+		// These should refuse to add as they are already in the queue
+		assert(!queue.push("three"));
+		assert(!queue.push("four"));
+		
+		writeln("Finished pushing".color(fg.cyan));
+		sleep(240.seconds);
+		queue.join();
+		
+		writeln("Finishing test".color(fg.light_blue));
+		
+	}
 }
-*/
