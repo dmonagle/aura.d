@@ -124,7 +124,7 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 	}
 	
 	/// Returns an array of deserialized models matching the list of ids given
-	ModelType[] findModel(ModelType, string key = "", IdType)(const IdType[] ids ...) {
+	ModelType[] findModels(ModelType, string key = "", IdType)(const IdType[] ids ...) {
 		import std.array;
 		import std.algorithm;
 		
@@ -148,7 +148,7 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 	ModelType findModel(ModelType, string key = "", IdType)(const IdType id) {
 		import std.conv;
 
-		auto models = findModel!(ModelType, key, IdType)([id]);
+		auto models = findModels!(ModelType, key, IdType)([id]);
 		if (models.length) return models[0];
 		static if(is(ModelType == class)) return null;
 		else throw new NoModelForIdException("Could not find model with id " ~ to!string(id) ~ " in " ~ containerName!ModelType);

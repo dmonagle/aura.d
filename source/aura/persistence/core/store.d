@@ -9,9 +9,123 @@ import vibe.data.serialization;
 import std.typetuple;
 import std.traits;
 import std.conv;
+import std.datetime;
+import core.time;
+import std.algorithm;
 
 import std.stdio;
 import colorize;
+
+class ModelStore {
+	this() {
+		_storeLife = 3.seconds;
+	}
+
+	struct IndexMeta {
+		string function(ModelInterface) getKey;
+	}
+
+	void addIndex(string key)(string function(ModelInterface) getKey) {
+		_indexMeta[key] = IndexMeta(getKey);
+	}
+
+	void addIndex(M, string attribute)() {
+		addIndex!attribute((model) => __traits(getMember, cast(M)model, attribute));
+	}
+
+	void inject(ModelInterface m) {
+		_store[""][m.persistenceId] = m;
+		touch(m);
+		foreach (key, meta; _indexMeta) {
+			_store[key][meta.getKey(m)] = m;
+		}
+	}
+
+	void clean() {
+		foreach(id, model; _store[""])
+			if (hasExpired(model)) remove(model);
+	}
+	
+	void remove(ModelInterface m) {
+		_store[""].remove(m.persistenceId);
+		_expiryTime.remove(m.persistenceId);
+		foreach (key, meta; _indexMeta) {
+			_store[key].remove(meta.getKey(m));
+		}
+	}
+	
+	void touch(ModelInterface m) {
+		_expiryTime[m.persistenceId] = Clock.currTime + _storeLife;
+	}
+	
+	bool hasExpired(ModelInterface m) {
+		return Clock.currTime >= _expiryTime[m.persistenceId];
+	}
+	
+	ModelInterface[string] opIndex(string key) {
+		return _store[key];
+	}
+
+	void add(string key, string id, ModelInterface model) {
+	}
+
+	ModelInterface get(M)(string key, string id) {
+		ModelInterface model;
+		assert(key == "" || key in _indexMeta, "Attempted to look up unregistered key '" ~ key ~ "` in store for model '" ~ M.stringof ~ "'");
+		if (key !in _store) return model; // Return if nothing has been put into the index yet
+
+		auto models = _store[key];
+		if (id in models) model = models[id];
+		return cast(M)model;
+	}
+
+	ModelInterface get(M)(string id) {
+		return get!M("", id);
+	}
+
+private:
+	Duration _storeLife;
+	IndexMeta[string] _indexMeta;
+	SysTime[string] _expiryTime;
+	ModelInterface[string][string] _store;
+}
+
+version (unittest) {
+	unittest {
+		class TestModelBase : ModelInterface {
+			override @ignore @property string persistenceId() const { return _id; }
+			override @property void persistenceId(string id) { _id = id; }
+			override void ensureId() {}
+			
+			string _id;
+		}
+		
+		class Person : TestModelBase {
+			string firstName;
+			string surname;
+			string companyReference;
+		}
+
+		auto modelStore = new ModelStore;
+		modelStore.addIndex!(Person, "firstName");
+
+		Person person = new Person();
+		person._id = "1";
+		person.firstName = "David";
+
+		modelStore.inject(person);
+
+		assert(!modelStore.get!Person("2"));
+		assert(modelStore.get!Person("1"));
+
+		auto personClone = modelStore.get!Person("1");
+		assert(personClone == person);
+
+		assert(!modelStore.get!Person("firstName", "Fred"));
+		assert(modelStore.get!Person("firstName", "David") == person);
+	}
+}
+
 
 class PersistenceStore(A ...) {
 	alias AdapterTypes = TypeTuple!A;
@@ -25,8 +139,8 @@ class PersistenceStore(A ...) {
 		foreach(int index, A; AdapterTypes) {
 			_adapters[index] = new A();
 		}
-		foreach(M; ModelTypes) {
-			writeln(M.stringof.color(fg.green));
+		foreach(int index, M; ModelTypes) {
+			_modelStore[index] = new ModelStore;
 		}
 	}
 
@@ -69,44 +183,30 @@ class PersistenceStore(A ...) {
 	}
 
 	// Returns the store object for the given model
-	ref ModelInterface[string][string] modelStore(M)() {
+	ModelStore modelStore(M)() {
 		auto i = staticIndexOf!(M, ModelTypes);
 		assert(i != -1, "Attempted to look up store for unregistered model: " ~ M.stringof);
 		return _modelStore[i];
 	}
 
 	void inject(M : ModelInterface)(M m) {
-		modelStore!M[""][m.persistenceId] = m;
-		if (M.stringof in _indexMeta) {
-			auto meta = _indexMeta[M.stringof];
- 			modelStore!M[meta.name][meta.getKey(m)] = m;
-		}
+		modelStore!M.inject(m);
 	}
 
 	void inject(M : ModelInterface)(M[] models) {
 		foreach(m; models) inject(m);
 	}
 
-	void addIndex(M)(string name, string function(ModelInterface) getKey) {
-		_indexMeta[M.stringof] = IndexMeta(name, getKey);
+	void addIndex(M, string key)(string function(ModelInterface) getKey) {
+		modelStore!M.addIndex!key(getKey);
 	}
 	
 	void addIndex(M, string attribute)() {
-		addIndex!M(attribute, (model) => mixin("(cast(" ~ M.stringof ~ ")model)." ~ attribute));
+		modelStore!M.addIndex!(M, attribute);
 	}
 	
-	M findInStore(M, string index = "", T)(const T id) {
-		M returnModel;
-		string lookupId = id.to!string;
-
-		if (index in modelStore!M) {
-			auto models = modelStore!M[index];
-			if (lookupId in models) {
-				returnModel = cast(M)(models[lookupId]);
-			}
-		}
-
-		return returnModel;
+	M findInStore(M, string key = "", T)(const T id) {
+		return cast(M)modelStore!M.get!M(key, id.to!string);
 	}
 
 	M[] queryModel(M, A : PersistenceAdapterInterface, T)(const T query) {
@@ -119,12 +219,12 @@ class PersistenceStore(A ...) {
 		return returnModels;
 	}
 
-	M[] findModel(M, string key = "", IdType)(const IdType[] ids ...) {
+	M[] findModels(M, string key = "", IdType)(const IdType[] ids ...) {
 		M[] returnModels;
-		T[] adapterSearchIds;
+		IdType[] adapterSearchIds;
 
 		foreach(id; ids) {
-			auto result = findInStore!(M, index)(id);
+			auto result = findInStore!(M, key)(id);
 			if (result) {
 				returnModels ~= result;
 			}
@@ -135,7 +235,7 @@ class PersistenceStore(A ...) {
 
 		if (adapterSearchIds.length) {
 			auto adapter = adapterFor!M;
-			auto adapterModels = adapter.findModel!(M, index)(adapterSearchIds);
+			auto adapterModels = adapter.findModels!(M, key)(adapterSearchIds);
 			returnModels ~= adapterModels;
 			inject!M(adapterModels);
 		}
@@ -172,8 +272,7 @@ private:
 	}
 
 	PersistenceAdapterInterface[AdapterTypes.length] _adapters;
-	ModelInterface[string][string][ModelTypes.length] _modelStore;
-	IndexMeta[string] _indexMeta;
+	ModelStore[ModelTypes.length] _modelStore;
 }
 
 version (unittest) {
@@ -205,6 +304,16 @@ version (unittest) {
 			writeln("Adapter 1 is saving".color(fg.light_blue));
 			return true;
 		}
+
+		ModelType[] findModels(ModelType, string key = "", IdType)(const IdType[] ids ...) {
+			ModelType[] models;
+			return models;
+		}
+
+		ModelType findModel(ModelType, string key = "", IdType)(const IdType id) {
+			ModelType model;
+			return model;
+		}
 	}
 
 	class Adapter2 : PersistenceAdapter!(Company) {
@@ -232,7 +341,7 @@ version (unittest) {
 		assert(!lookup);
 		lookup = store.findInStore!Person("1");
 		assert(lookup == person);
-		
+
 		store.addIndex!(Company, "reference");
 		auto company = new Company;
 		company.name = "Aura Inc";
@@ -244,11 +353,11 @@ version (unittest) {
 		lookupCompany = store.findInStore!(Company, "reference")("aura-001");
 		assert(lookupCompany == company);
 
-		auto many = store.findMany!(Company, "reference")("aura-001", "aura-002");
+		auto many = store.findModels!(Company, "reference")("aura-001", "aura-002");
 		assert(many.length == 1, "Expected length of 1 but got " ~ many.length.to!string);
 		assert(many[0].reference == "aura-001");
 
-		auto one = store.findOne!(Company, "reference")("aura-001");
+		auto one = store.findModel!(Company, "reference")("aura-001");
 		assert(one.reference == "aura-001");
 
 		store.save(one);
@@ -261,4 +370,3 @@ version (unittest) {
 		assert(store.adapter!Adapter1.containerName!Company == "kompaniez");
 	}
 }
-
