@@ -93,9 +93,10 @@ private:
 version (unittest) {
 	unittest {
 		class TestModelBase : ModelInterface {
-			override @ignore @property string persistenceId() const { return _id; }
-			override @property void persistenceId(string id) { _id = id; }
-			override void ensureId() {}
+			mixin PersistenceTypeMixin;
+			@ignore @property string persistenceId() const { return _id; }
+			@property void persistenceId(string id) { _id = id; }
+			void ensureId() {}
 			
 			string _id;
 		}
@@ -213,7 +214,7 @@ class PersistenceStore(A ...) {
 		M[] returnModels;
 
 		auto adapter = adapter!A;
-		adapter.queryModel!M(this, query, (model) { returnModels ~= model; });
+		adapter.storeQuery!M(this, query, (model) { returnModels ~= model; });
 		inject!M(returnModels);
 
 		return returnModels;
@@ -235,7 +236,7 @@ class PersistenceStore(A ...) {
 
 		if (adapterSearchIds.length) {
 			auto adapter = adapterFor!M;
-			auto adapterModels = adapter.findModels!(M, key)(adapterSearchIds);
+			auto adapterModels = adapter.findMany!(M, key)(adapterSearchIds);
 			returnModels ~= adapterModels;
 			inject!M(adapterModels);
 		}
@@ -248,7 +249,7 @@ class PersistenceStore(A ...) {
 		
 		if (!returnModel) {
 			auto adapter = adapterFor!M;
-			returnModel = adapter.findModel!(M, key)(id);
+			returnModel = adapter.findOne!(M, key)(id);
 			if (returnModel) inject!M(returnModel);
 		}
 		
@@ -279,9 +280,10 @@ version (unittest) {
 	import aura.persistence.core.relations;
 
 	class TestModelBase : ModelInterface {
-		override @ignore @property string persistenceId() const { return _id; }
-		override @property void persistenceId(string id) { _id = id; }
-		override void ensureId() {}
+		mixin PersistenceTypeMixin;
+		@ignore @property string persistenceId() const { return _id; }
+		@property void persistenceId(string id) { _id = id; }
+		void ensureId() {}
 
 		string _id;
 	}
@@ -305,12 +307,12 @@ version (unittest) {
 			return true;
 		}
 
-		ModelType[] findModels(ModelType, string key = "", IdType)(const IdType[] ids ...) {
+		ModelType[] findMany(ModelType, string key = "", IdType)(const IdType[] ids ...) {
 			ModelType[] models;
 			return models;
 		}
 
-		ModelType findModel(ModelType, string key = "", IdType)(const IdType id) {
+		ModelType findOne(ModelType, string key = "", IdType)(const IdType id) {
 			ModelType model;
 			return model;
 		}

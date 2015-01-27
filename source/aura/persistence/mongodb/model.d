@@ -8,10 +8,11 @@ public import aura.data.bson;
 
 import std.datetime;
 
-mixin template MongoModel(ModelType, string cName = "") {
+mixin template MongoModel(ModelType) {
 	@optional BsonObjectID _id;
-	
-	@property const string _type() { return ModelType.stringof; }
+	mixin PersistenceTypeMixin;
+
+	@property const string _type() { return persistenceType; }
 	// Dummy setter so that _type will be serialized
 	@optional @property void _type(string value) {}
 	
@@ -65,7 +66,7 @@ version(unittest) {
 		mongodb.save(u);
 		assert(!u.isNew);
 		
-		auto loadedUser = mongodb.findModel!PersistenceTestUser(u.id);
+		auto loadedUser = mongodb.findOne!PersistenceTestUser(u.id);
 		assert(loadedUser.firstName == "David");
 	}
 	
@@ -88,10 +89,10 @@ version(unittest) {
 		mongodb.save(p);
 		assert(!p.isNew);
 		
-		auto loadedUser = mongodb.findModel!PersistenceTestPerson(p.id);
+		auto loadedUser = mongodb.findOne!PersistenceTestPerson(p.id);
 		assert(loadedUser.name == "David");
 		
-		assert(mongodb.find!PersistenceTestPerson("000000000000000000000000").type == Bson.Type.null_);
+		assert(!mongodb.findOne!PersistenceTestPerson("000000000000000000000000"));
 	}
 }
 
