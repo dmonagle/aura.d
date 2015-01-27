@@ -52,7 +52,7 @@ private:
 	string _redisKey;
 }
 
-version (redis_unittest) {
+debug (redis) {
 unittest {
 		auto redisClient = new RedisClient("redis");
 		auto db = redisClient.getDatabase(0);
@@ -185,7 +185,7 @@ private:
 
 }
 
-version (redis_unittest) {
+debug (redis_unittest) {
 	unittest {
 		auto redisClient = new RedisClient("redis");
 		auto db = redisClient.getDatabase(0);
@@ -270,12 +270,12 @@ private:
 	Duration _workerCheckEvery;
 }
 
-version (redis_unittest) {
+debug (redis) {
 	unittest {
 		import std.stdio;
 		import colorize;
 		
-		writeln("Starting test".color(fg.light_blue));
+		writeln("Starting redis test. This is a long test, it takes about 40 seconds".color(fg.light_red));
 		
 		auto redisClient = new RedisClient("redis");
 		auto db = redisClient.getDatabase(0);
@@ -284,26 +284,30 @@ version (redis_unittest) {
 		queue.clear;
 		queue.runWorkers((id) {
 				writeln("Processing ID: " ~ id);
-				sleep(20.seconds);
+				sleep(10.seconds);
 			}, 2);
 		
 		writeln("Queue has been created. Pushing in 3 seconds".color(fg.light_green));
-		sleep(3.seconds);
+		writeln("Pushing one".color(fg.light_yellow));
 		assert(queue.push("one"));
 		sleep(2.seconds);
+		writeln("Pushing two".color(fg.light_yellow));
 		assert(queue.push("two"));
 		sleep(2.seconds);
 		// This should add but should fail to process immediately as it should still be processing
+		writeln("Pushing two".color(fg.light_yellow));
 		assert(queue.push("two"));
 		// The following should queue up
+		writeln("Pushing three".color(fg.light_yellow));
 		assert(queue.push("three"));
+		writeln("Pushing four".color(fg.light_yellow));
 		assert(queue.push("four"));
 		// These should refuse to add as they are already in the queue
 		assert(!queue.push("three"));
 		assert(!queue.push("four"));
 		
 		writeln("Finished pushing".color(fg.cyan));
-		sleep(240.seconds);
+		sleep(25.seconds);
 		queue.join();
 		
 		writeln("Finishing test".color(fg.light_blue));

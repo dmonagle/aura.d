@@ -104,7 +104,7 @@ private:
 
 alias RedisLock = RedisLockBase!(false);
 
-version (redis_unittest) {
+debug (redis) {
 	unittest {
 		auto redisClient = new RedisClient("redis");
 		auto db = redisClient.getDatabase(0);
@@ -130,7 +130,7 @@ version (redis_unittest) {
 
 alias RedisScopedLock = RedisLockBase!(true);
 
-version (redis_unittest) {
+debug (redis) {
 	unittest {
 		auto redisClient = new RedisClient("redis");
 		auto db = redisClient.getDatabase(0);

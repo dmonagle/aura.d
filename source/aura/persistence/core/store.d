@@ -219,7 +219,7 @@ class PersistenceStore(A ...) {
 		return returnModels;
 	}
 
-	M[] findModels(M, string key = "", IdType)(const IdType[] ids ...) {
+	M[] findMany(M, string key = "", IdType)(const IdType[] ids ...) {
 		M[] returnModels;
 		IdType[] adapterSearchIds;
 
@@ -243,7 +243,7 @@ class PersistenceStore(A ...) {
 		return returnModels;
 	}
 
-	M findModel(M, string key = "", IdType)(const IdType id) {
+	M findOne(M, string key = "", IdType)(const IdType id) {
 		M returnModel = findInStore!(M, key)(id);
 		
 		if (!returnModel) {
@@ -353,11 +353,11 @@ version (unittest) {
 		lookupCompany = store.findInStore!(Company, "reference")("aura-001");
 		assert(lookupCompany == company);
 
-		auto many = store.findModels!(Company, "reference")("aura-001", "aura-002");
+		auto many = store.findMany!(Company, "reference")("aura-001", "aura-002");
 		assert(many.length == 1, "Expected length of 1 but got " ~ many.length.to!string);
 		assert(many[0].reference == "aura-001");
 
-		auto one = store.findModel!(Company, "reference")("aura-001");
+		auto one = store.findOne!(Company, "reference")("aura-001");
 		assert(one.reference == "aura-001");
 
 		store.save(one);
