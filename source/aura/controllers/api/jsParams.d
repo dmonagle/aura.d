@@ -43,7 +43,7 @@ Json extractJSParam(DictionaryList!(string,true,16L) query, string paramName) {
 		}
 	}
 
-	Json json;
+	Json json = Json.emptyObject;
 
 	foreach(key, value; query) {
 		if (key.length >= paramName.length && key[0..paramName.length] == paramName) {
