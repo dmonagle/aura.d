@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Creates a docker container for development. 
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR=/aura.d
+DEV_CMD=dub
+DEV_IMAGE=d-build:latest
+CONTAINER_NAME=aura
+
+#!/bin/bash
+if [ -f /.dockerinit ]; then
+    cd $PROJECT_DIR
+	if [ $# -eq 0 ]; then
+	    echo "Running a shell in development environment"
+	    exec /bin/bash
+	else
+		exec $DEV_CMD $@
+	fi    
+else
+	echo "Attempting to remove dead container..."
+	docker rm $CONTAINER_NAME
+	echo "Attempting to attach to a running version..."
+	docker attach $CONTAINER_NAME 
+	if [ "$?" -ne "0" ]
+	then
+	    echo "Creating new container: $CONTAINER_NAME"
+		docker run -ti --name=$CONTAINER_NAME -v "$SSH_AUTH_SOCK:/tmp/ssh_auth_sock" -e "SSH_AUTH_SOCK=/tmp/ssh_auth_sock" \
+		-v "$DIR":"$PROJECT_DIR" \
+		-v "$DIR/tmp/dub":"/root/.dub" \
+		-p 8080:8080 \
+		--link mongodb-1:mongodb \
+		--link elasticsearch-1:elasticsearch \
+		--link redis:redis \
+		$DEV_IMAGE \
+		/bin/bash -c "$PROJECT_DIR/dev-env $*;"
+	fi
+fi
