@@ -33,12 +33,7 @@ struct ScheduledTask {
 		_meta.nextRun = _nextTimeFunction(_meta);
 
 		auto duration = _meta.nextRun - Clock.currTime;
-		if (_timer) {
-			_timer.rearm(duration);
-		}
-		else {
-			_timer = setTimer(duration, &run);
-		}
+		_timer = setTimer(duration, &run);
 	}
 
 	void start() {
@@ -49,7 +44,7 @@ struct ScheduledTask {
 	}
 
 	void stop() {
-		if (_timer) _timer.stop;
+		_timer = Timer.init;
 		if (taskRunning) _task.join;
 	}
 
