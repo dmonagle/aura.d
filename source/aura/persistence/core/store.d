@@ -145,7 +145,11 @@ class PersistenceStore(A ...) {
 		}
 	}
 
-	static @property PersistenceStore!A instance() {
+	static @property PersistenceStore!A sandbox() {
+		return new PersistenceStore!A();
+	}
+
+	static @property PersistenceStore!A sharedInstance() {
 		static PersistenceStore!A _store;
 		if (!_store) {
 			_store = new PersistenceStore!A();
@@ -255,7 +259,7 @@ class PersistenceStore(A ...) {
 		
 		return returnModel;
 	}
-	
+
 private:
 	struct IndexMeta {
 		string name;
@@ -293,7 +297,7 @@ version (unittest) {
 		string surname;
 		string companyReference;
 
-		mixin BelongsTo!(ApplicationStore, Company, "", "companyReference", "reference");
+		//mixin BelongsTo!(ApplicationStore, Company, "", "companyReference", "reference");
 	}
 
 	class Company : TestModelBase {
@@ -328,47 +332,47 @@ version (unittest) {
 	class ApplicationStore : PersistenceStore!(Adapter1, Adapter2) {
 	}
 
-	alias store = ApplicationStore.instance;
+	alias sharedStore = ApplicationStore.sharedInstance;
 
 	unittest {
-		auto person = store.findInStore!Person("fakeId");
+		auto person = sharedStore.findInStore!Person("fakeId");
 		assert(!person);
 		person = new Person;
 		person.firstName = "David";
 		person.surname = "Monagle";
 		person.companyReference = "aura-001";
 		person.persistenceId = "1";
-		store.inject(person);
-		auto lookup = store.findInStore!Person("0");
+		sharedStore.inject(person);
+		auto lookup = sharedStore.findInStore!Person("0");
 		assert(!lookup);
-		lookup = store.findInStore!Person("1");
+		lookup = sharedStore.findInStore!Person("1");
 		assert(lookup == person);
 
-		store.addIndex!(Company, "reference");
+		sharedStore.addIndex!(Company, "reference");
 		auto company = new Company;
 		company.name = "Aura Inc";
 		company.reference = "aura-001";
 		company.persistenceId = "1";
-		store.inject(company);
-		auto lookupCompany = store.findInStore!(Company, "reference")("1");
+		sharedStore.inject(company);
+		auto lookupCompany = sharedStore.findInStore!(Company, "reference")("1");
 		assert(!lookupCompany);
-		lookupCompany = store.findInStore!(Company, "reference")("aura-001");
+		lookupCompany = sharedStore.findInStore!(Company, "reference")("aura-001");
 		assert(lookupCompany == company);
 
-		auto many = store.findMany!(Company, "reference")("aura-001", "aura-002");
+		auto many = sharedStore.findMany!(Company, "reference")("aura-001", "aura-002");
 		assert(many.length == 1, "Expected length of 1 but got " ~ many.length.to!string);
 		assert(many[0].reference == "aura-001");
 
-		auto one = store.findOne!(Company, "reference")("aura-001");
+		auto one = sharedStore.findOne!(Company, "reference")("aura-001");
 		assert(one.reference == "aura-001");
 
-		store.save(one);
+		sharedStore.save(one);
 
-		auto foreignCompany = person.company;
+		auto foreignCompany = sharedStore.findOne!(Company, "reference")(person.companyReference);
 		assert(foreignCompany == company);
 
-		assert(store.adapter!Adapter1.containerName!Company == "companies");
-		store.adapter!Adapter1.containerName!Company = "kompaniez";
-		assert(store.adapter!Adapter1.containerName!Company == "kompaniez");
+		assert(sharedStore.adapter!Adapter1.containerName!Company == "companies");
+		sharedStore.adapter!Adapter1.containerName!Company = "kompaniez";
+		assert(sharedStore.adapter!Adapter1.containerName!Company == "kompaniez");
 	}
 }

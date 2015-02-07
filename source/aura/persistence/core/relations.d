@@ -1,5 +1,8 @@
 ﻿module aura.persistence.core.relations;
 
+// Leaving this out for the moment. Not sure it's actually good for the developer to be triggering database queries without
+// explicitly requesting it. Is it such a big deal to write: auto account = store.findOne!Account(user.accountId); ??
+/*
 import aura.util.string_transforms;
 import aura.util.inflections.en;
 
@@ -18,7 +21,7 @@ string defineBelongsTo(S, M, string propertyName, string key, string foreignKey)
 
 	return format(`
 		@ignore @property %1$s %2$s() {
-			return %3$s.instance.findOne!(%1$s, "%5$s")(%4$s);
+			return %3$s.sharedInstance.findOne!(%1$s, "%5$s")(%4$s);
 		}
 	`, M.stringof, _propertyName, S.stringof, _key, foreignKey);
 }
@@ -46,7 +49,7 @@ string defineOuterBelongsTo(S, L, M, string propertyName, string key, string for
 	
 	return format(`
 		%1$s %2$s(%6$s model) {
-			return %3$s.instance.findOne!(%1$s, "%5$s")(model.%4$s);
+			return %3$s.sharedInstance.findOne!(%1$s, "%5$s")(model.%4$s);
 		}
 	`, M.stringof, _propertyName, S.stringof, _key, foreignKey, L.stringof);
 }
@@ -58,3 +61,4 @@ mixin template BelongsTo(S, L, M, string propertyName = "", string key = "", str
 
 	mixin(defineOuterBelongsTo!(S, L, M, propertyName, key, foreignKey));
 }
+*/

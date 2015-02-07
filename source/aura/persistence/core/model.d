@@ -8,6 +8,8 @@ interface ModelInterface {
 	@property void persistenceId(string id);
 	@ignore @property string persistenceType() const;
 	void ensureId();
+	//@ignore @property StoreType store();
+
 }
 
 mixin template PersistenceTypeMixin() {

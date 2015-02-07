@@ -1,8 +1,8 @@
 ﻿module aura.persistence.mongodb.model;
 
 import aura.persistence.mongodb.adapter;
-import aura.persistence.core;
 import aura.util.null_bool;
+public import aura.persistence.core;
 
 public import aura.data.bson;
 
