@@ -1,103 +1,63 @@
 ﻿module aura.configuration.directoryReader;
 
 import aura.data.json;
+import aura.data.yaml;
 
 import std.file;
 import std.path;
-import yaml;
 import std.algorithm;
 
-struct DirectoryReader {
-	this(string directory, string environment) {
-		_configDirectory = directory;
-		_environment = environment;
-	}
-
-	@property string environment() {
-		return _environment;
-	}
-
-	@property void environment(string e) {
-		_environment = e;
-	}
-
-	Json process() {
-		auto j = Json.emptyObject;
-
-		j = j.jsonMerge(processDirectory(_configDirectory));
-		j = j.jsonMerge(processDirectory(buildPath(_configDirectory, _environment), false));
-
-		return j;
-	}
-
-private:
-	Json processDirectory(string directory, bool requireEnvironmentKey = true) {
-		Json j = Json.emptyObject;
-
-		if (!directory.exists || !directory.isDir) return j;
-		// Iterate a directory in breadth
-		foreach (string path; dirEntries(directory, SpanMode.shallow))
-		{
-			if ([".yml", ".yaml"].canFind(path.extension)) {
-				auto node = processYamlFile(path, requireEnvironmentKey);
-				if (node.isValid) j[path.baseName(path.extension)] = node.toJson;
-			}
-		}
-
-		return j;
-	}
-
-	Node processYamlFile(string fileName, bool requireEnvironmentKey) {
-		Node returnNode;
-
-		auto yamlConfig = Loader(fileName).load();
-		if (requireEnvironmentKey) {
-			if (yamlConfig.containsKey(_environment)) 
-				returnNode = yamlConfig[_environment];
-		}
-		else {
-			returnNode = yamlConfig;
-		}
-
-		return returnNode;
-	}
-
-	string _configDirectory;
-	string _environment;
+Node processYamlConfigPath(string path, string environment) {
+	auto y = processYamlConfigDirectory(path, environment);
+	y = y.merge(processYamlConfigDirectory(buildPath(path, environment)));
+	
+	return y;
 }
 
-Json toJson(ref Node node) {
-	Json j = Json(null);
+
+
+/// Processes a single directory
+Node processYamlConfigDirectory(string directory, string environment = "") {
+	auto n = Node(cast(string[string])null);
 	
-	if (node.isScalar) {
-		return Json(node.as!string);
-	}
-	else if (node.isMapping) {
-		j = Json.emptyObject;
-		foreach(string key, Node childNode; node)
-			j[key] = childNode.toJson;
-	}
-	else if (node.isSequence) {
-		j = Json.emptyArray;
-		foreach(Node childNode; node)
-			j ~= childNode.toJson;
+	if (!directory.exists || !directory.isDir) return n;
+	// Iterate a directory in breadth
+	foreach (string path; dirEntries(directory, SpanMode.shallow))
+	{
+		if ([".yml", ".yaml", "conf", "config"].canFind(path.extension)) {
+			auto node = processYamlConfigFile(path, environment);
+			if (node.isValid) n[path.baseName(path.extension)] = node;
+		}
 	}
 	
-	return j;
+	return n;
+}
+
+
+Node processYamlConfigFile(string fileName, string environment = "") {
+	Node returnNode;
+	
+	auto yamlConfig = Loader(fileName).load();
+	if (environment.length) {
+		if (yamlConfig.containsKey(environment)) 
+			returnNode = yamlConfig[environment];
+	}
+	else {
+		returnNode = yamlConfig;
+	}
+	
+	return returnNode;
 }
 
 unittest {
 	import std.stdio;
 	import colorize;
 
-	auto config = new DirectoryReader("test/configuration", "development");
+	auto yaml = processYamlConfigPath("test/configuration", "development");
+	writeln(yaml.toJson.toPrettyString.color(fg.light_yellow));
 
-	auto json = config.process;
-	writeln(json.toPrettyString.color(fg.light_yellow));
-
-	config.environment = "production";
-	json = config.process;
-	writeln(json.toPrettyString.color(fg.light_blue));
+	yaml = processYamlConfigPath("test/configuration", "production");
+	writeln(yaml.toJson.toPrettyString.color(fg.light_blue));
 
 }
 

@@ -2,12 +2,9 @@
 
 import yaml;
 
-/**
- * 
- * 
- */
+/// Merges two YAML nodes together
 Node merge(Node original, Node changed) {
-	if (original.isMapping && changed.isMapping) {
+	if (!original.isMapping || !changed.isMapping) {
 		return changed;
 	}
 
