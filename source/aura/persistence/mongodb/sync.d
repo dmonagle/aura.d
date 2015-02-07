@@ -1,9 +1,13 @@
-﻿module aura.persistence.core.sync;
+﻿module aura.persistence.mongodb.sync;
 
-import aura.persistence.core.base;
-import aura.persistence.mongodb;
+import aura.persistence.core;
+import aura.persistence.mongodb.model;
+
+import vibe.data.bson;
 
 import std.typecons;
+import std.datetime;
+
 public import std.digest.sha;
 
 /* This set of structs could certainly use some better methods of updating other than calling save
@@ -185,9 +189,10 @@ version (unittest) {
 	
 }
 
+/*
 unittest {
 	import std.exception;
-	
+
 	auto mongoAdapter = new MongoAdapter("mongodb://localhost/", "geo_server", "unittest");
 	
 	mongoAdapter.dropCollection("sync_meta");
@@ -240,6 +245,7 @@ unittest {
 	assert(sync["webService1"].syncHash.length);
 	
 }
+*/
 
 SyncHash syncHash(M, string hashFunction = "sha1Of")(const M model) {
 	static if (__traits(compiles, model.stringForSyncHash)) {

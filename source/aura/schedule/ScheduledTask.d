@@ -44,6 +44,7 @@ struct ScheduledTask {
 	}
 
 	void stop() {
+		if (_timer) _timer.stop;
 		_timer = Timer.init;
 		if (taskRunning) _task.join;
 	}
