@@ -12,9 +12,24 @@ interface ModelInterface {
 
 }
 
-mixin template PersistenceTypeMixin() {
+mixin template PersistenceTypeProperty() {
 	@ignore @property string persistenceType() const {
 		import std.string;
 		return typeid(this).toString().split(".")[$ - 1];
 	}
+}
+
+mixin template PersistenceStoreProperty(S) {
+	alias PersistenceStoreType = S;
+
+	@property S persistenceStore() { 
+		return _persistenceStore; 
+	}
+
+	@property void persistenceStore(S s) { 
+		_persistenceStore = s; 
+	}
+
+private:
+	S _persistenceStore;
 }

@@ -10,7 +10,7 @@ import std.datetime;
 
 mixin template MongoModel(ModelType) {
 	@optional BsonObjectID _id;
-	mixin PersistenceTypeMixin;
+	mixin PersistenceTypeProperty;
 
 	@property const string _type() { return persistenceType; }
 	// Dummy setter so that _type will be serialized

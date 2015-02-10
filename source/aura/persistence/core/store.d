@@ -93,7 +93,7 @@ private:
 version (unittest) {
 	unittest {
 		class TestModelBase : ModelInterface {
-			mixin PersistenceTypeMixin;
+			mixin PersistenceTypeProperty;
 			@ignore @property string persistenceId() const { return _id; }
 			@property void persistenceId(string id) { _id = id; }
 			void ensureId() {}
@@ -136,18 +136,6 @@ class PersistenceStore(A ...) {
 	// Make sure that each adapter is only added once
 	static assert (AdapterTypes.length == NoDuplicates!(AdapterTypes).length, "Store can not have more than one of the same type of adapter");
 
-	static @property PersistenceStore!A sandbox() {
-		return new PersistenceStore!A();
-	}
-
-	static @property PersistenceStore!A sharedInstance() {
-		static PersistenceStore!A _store;
-		if (!_store) {
-			_store = new PersistenceStore!A();
-		}
-		return _store;
-	}
-
 	/// Returns the adapters that have the model M registered
 	template adaptersFor(M) {
 		alias adaptersFor = Filter!(RegisteredModel!M.inAdapter, AdapterTypes);
@@ -174,6 +162,9 @@ class PersistenceStore(A ...) {
 
 	void inject(M : ModelInterface)(M m) {
 		modelStore!M.inject(m);
+		static if (__traits(hasMember, M, "persistenceStore") && (is(M.PersistenceStoreType : PersistenceStore!A))) {
+			m.persistenceStore = cast(m.PersistenceStoreType)this;
+		}
 	}
 
 	void inject(M : ModelInterface)(M[] models) {
@@ -284,7 +275,8 @@ debug (persistenceIntegration) {
 		import aura.persistence.core.relations;
 
 		class TestModelBase : ModelInterface {
-			mixin PersistenceTypeMixin;
+			mixin PersistenceTypeProperty;
+			mixin PersistenceStoreProperty!ApplicationStore;
 			@ignore @property string persistenceId() const { return _id; }
 			@property void persistenceId(string id) { _id = id; }
 			void ensureId() {}
@@ -297,7 +289,7 @@ debug (persistenceIntegration) {
 			string surname;
 			string companyReference;
 
-			//mixin BelongsTo!(ApplicationStore, Company, "", "companyReference", "reference");
+			mixin BelongsTo!(Company, "", "companyReference", "reference");
 		}
 
 		class Company : TestModelBase {
@@ -310,31 +302,32 @@ debug (persistenceIntegration) {
 				writeln("Adapter 1 is saving".color(fg.light_blue));
 				return true;
 			}
-
+			
 			ModelType[] findMany(ModelType, string key = "", IdType)(const IdType[] ids ...) {
 				ModelType[] models;
 				return models;
 			}
-
+			
 			ModelType findOne(ModelType, string key = "", IdType)(const IdType id) {
 				ModelType model;
 				return model;
 			}
 		}
-
+		
 		class Adapter2 : PersistenceAdapter!(Company) {
 			bool save(M)(const M model) {
 				writeln("Adapter 2 is saving".color(fg.light_cyan));
 				return true;
 			}
 		}
-
+		
 		class ApplicationStore : PersistenceStore!(Adapter1, Adapter2) {
 		}
 
-		alias sharedStore = ApplicationStore.sharedInstance;
 
 		unittest {
+			auto sharedStore = new ApplicationStore;
+
 			auto person = sharedStore.findInStore!Person("fakeId");
 			assert(!person);
 			person = new Person;
@@ -343,6 +336,8 @@ debug (persistenceIntegration) {
 			person.companyReference = "aura-001";
 			person.persistenceId = "1";
 			sharedStore.inject(person);
+			assert(person.persistenceStore);
+
 			auto lookup = sharedStore.findInStore!Person("0");
 			assert(!lookup);
 			lookup = sharedStore.findInStore!Person("1");
@@ -368,7 +363,8 @@ debug (persistenceIntegration) {
 
 			sharedStore.save(one);
 
-			auto foreignCompany = sharedStore.findOne!(Company, "reference")(person.companyReference);
+			//auto foreignCompany = sharedStore.findOne!(Company, "reference")(person.companyReference);
+			auto foreignCompany = person.company;
 			assert(foreignCompany == company);
 
 			assert(sharedStore.adapter!Adapter1.containerName!Company == "companies");
