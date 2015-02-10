@@ -8,6 +8,7 @@ interface ModelInterface {
 	@ignore @property string persistenceId() const;
 	@property void persistenceId(string id);
 	@ignore @property string persistenceType() const;
+	bool isNew() const;
 	void ensureId();
 	//@ignore @property StoreType store();
 
@@ -20,15 +21,22 @@ mixin template PersistenceTypeProperty() {
 	}
 }
 
-mixin template PersistenceStoreProperty(S) {
+mixin template PersistenceStoreProperty(S, bool convenience = true) {
 	alias PersistenceStoreType = S;
 
-	@property S persistenceStore() { 
+	@ignore @property S persistenceStore() { 
 		return _persistenceStore; 
 	}
 
 	@property void persistenceStore(S s) { 
 		_persistenceStore = s; 
+	}
+
+	static if (convenience) {
+		bool save()() {
+			assert(persistenceStore, "Called save on a model without a persistence store.");
+			return persistenceStore.save(this);
+		}
 	}
 
 private:

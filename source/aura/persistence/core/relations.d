@@ -10,7 +10,7 @@ string defineBelongsTo(M, string propertyName, string key, string foreignKey)() 
 	import std.string;
 	
 	static if (!propertyName.length) 
-		string _propertyName = M.stringof.camelCaseLower;
+		string _propertyName = M.stringof.snakeCase.camelCaseLower;
 	else
 		string _propertyName = propertyName;
 

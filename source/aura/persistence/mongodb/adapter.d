@@ -115,9 +115,42 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 		}
 	}
 
+	/// Returns a Bson model matching the id given
+	Bson findOne(ModelType, string key = "_id", IdType)(IdType id) {
+		import std.array;
+		import std.algorithm;
+		
+		auto q = serializeToBson([key: id]);
+		Bson returnValue = Bson(null);
+		
+		query!ModelType(q, 
+			(model) {
+				returnValue = model;
+			}, 1);
+		
+		return returnValue;
+	}
+	
+	/// Returns an array of Bson models matching the list of ids given
+	Bson[] findMany(ModelType, string key = "_id", IdType)(IdType[] ids ...) {
+		import std.array;
+		import std.algorithm;
+		
+		Bson[] models;
+		auto q = serializeToBson([key: ["$in": ids]]);
+		
+		query!ModelType(q, 
+			(model) {
+				models ~= model;
+			}
+		);
+		
+		return models;
+	}
+	
 	/// Executes the the given query on the models container and calls the delegate with the deserialised model for each match.
 	/// This function will look to update the model in the given store 
-	void storeQuery(ModelType : ModelInterface, S, Q)(S store, Q query, scope void delegate(ModelType model) pred = null, uint limit = 0) {
+	void storeQuery(ModelType : ModelInterface, S, Q)(S store, Q query, scope void delegate(ModelType) pred = null, uint limit = 0) {
 		import std.array;
 		import std.algorithm;
 		
@@ -132,28 +165,8 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 			, limit);
 	}
 	
-
-	
-	/// Returns an array of Bson models matching the list of ids given
-	Bson[] find(ModelType, string key = "_id", IdType)(IdType[] ids ...) {
-		import std.array;
-		import std.algorithm;
-		
-		Bson[] models;
-		auto q = serializeToBson([key: ["$in": ids]]);
-		
-		query!ModelType(q, 
-			(model) {
-				// Add to cache here
-				models ~= model;
-			}
-			);
-		
-		return models;
-	}
-	
 	/// Returns an array of deserialized models matching the list of ids given
-	ModelType[] findMany(ModelType, string key = "", IdType)(const IdType[] ids ...) {
+	ModelType[] findModels(ModelType, string key = "", IdType)(const IdType[] ids ...) {
 		import std.array;
 		import std.algorithm;
 		
@@ -173,7 +186,7 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 	}
 	
 	/// Returns a single deserialized model matching the given id
-	ModelType findOne(ModelType, string key = "", IdType)(const IdType id) {
+	ModelType findModel(ModelType, string key = "", IdType)(const IdType id) {
 		import std.conv;
 
 		ModelType model;

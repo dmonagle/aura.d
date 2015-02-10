@@ -97,6 +97,7 @@ version (unittest) {
 			@ignore @property string persistenceId() const { return _id; }
 			@property void persistenceId(string id) { _id = id; }
 			void ensureId() {}
+			@property bool isNew() const { return true; }
 			
 			string _id;
 		}
@@ -172,6 +173,9 @@ class PersistenceStore(A ...) {
 			}
 		}
 
+		// Inject the model into the store (has no effect if it's already there)
+		inject(model);
+
 		return result;
 	}
 
@@ -183,11 +187,13 @@ class PersistenceStore(A ...) {
 	}
 
 	void inject(M : ModelInterface)(M m) {
+		assert(!m.isNew, "Attempt to inject a model into a store before it has an id.");
 		modelStore!M.inject(m);
 		setStoreOnModel(m);
 		ensureEmbedded!((embeddedModel) {
 				setStoreOnModel(embeddedModel);
-		})(m);
+				embeddedModel.ensureId;
+			})(m);
 	}
 
 	void inject(M : ModelInterface)(M[] models) {
@@ -206,18 +212,30 @@ class PersistenceStore(A ...) {
 		return cast(M)modelStore!M.get!M(key, id.to!string);
 	}
 
-	M[] query(M, A : PersistenceAdapterInterface, T)(const T q) {
+	void query(M, A : PersistenceAdapterInterface, T)(T q, scope void delegate(M) action, uint limit = 0) {
+		M[] returnModels;
+		
+		auto adapter = adapter!A;
+		adapter.storeQuery!M(this, q, (model) { 
+			inject(model);
+			action(model);
+		}, limit);
+	}
+
+	void query(M, T)(T q, scope void delegate(M) action, uint limit = 0) {
+		query!(M, adapterTypeFor!M)(q, action, limit);
+	}
+
+	M[] query(M, A : PersistenceAdapterInterface, T)(T q, uint limit = 0) {
 		M[] returnModels;
 
-		auto adapter = adapter!A;
-		adapter.storeQuery!M(this, q, (model) { returnModels ~= model; });
-		inject!M(returnModels);
+		query!(M, A)(q, (model) { returnModels ~= model; }, limit);
 
 		return returnModels;
 	}
 
-	M[] query(M, T)(const T q) {
-		return query!(M, adapterTypeFor!M)(q);
+	M[] query(M, T)(T q, uint limit = 0) {
+		return query!(M, adapterTypeFor!M)(q, limit);
 	}
 
 	M[] findMany(M, string key = "", IdType)(const IdType[] ids ...) {
@@ -236,7 +254,7 @@ class PersistenceStore(A ...) {
 
 		if (adapterSearchIds.length) {
 			auto adapter = adapterFor!M;
-			auto adapterModels = adapter.findMany!(M, key)(adapterSearchIds);
+			auto adapterModels = adapter.findModels!(M, key)(adapterSearchIds);
 			returnModels ~= adapterModels;
 			inject!M(adapterModels);
 		}
@@ -249,7 +267,7 @@ class PersistenceStore(A ...) {
 		
 		if (!returnModel) {
 			auto adapter = adapterFor!M;
-			returnModel = adapter.findOne!(M, key)(id);
+			returnModel = adapter.findModel!(M, key)(id);
 			if (returnModel) inject!M(returnModel);
 		}
 		

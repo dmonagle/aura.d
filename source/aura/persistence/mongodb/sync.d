@@ -81,20 +81,22 @@ struct SyncMeta {
 	}
 }
 
-struct ModelSyncMeta(M) {
+struct ModelSyncMeta(M, S) {
 	private {
 		@ignore const M _model;
+		@ignore S _store;
 	}
 	
 	SyncMeta _syncMeta;
 	
-	this(const M model, const string[] requiredServices ...) {
+	this(const M model, S store, const string[] requiredServices ...) {
 		_model = model;
+		_store = store;
 		
 		assert(model._id.valid, "You can only use SyncMeta on a model with an Id");
 		
 		auto query = ["modelType": Bson(M.stringof), "modelId": Bson(model._id)].serializeToBson;
-		_syncMeta.mongoAdapter.find!SyncMeta(query, (result) {
+		_store.query!SyncMeta(query, (result) {
 			_syncMeta.deserializeBson(result);
 		}, 1);
 		
