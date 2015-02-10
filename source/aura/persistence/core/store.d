@@ -136,15 +136,6 @@ class PersistenceStore(A ...) {
 	// Make sure that each adapter is only added once
 	static assert (AdapterTypes.length == NoDuplicates!(AdapterTypes).length, "Store can not have more than one of the same type of adapter");
 
-	this() {
-		foreach(int index, A; AdapterTypes) {
-			_adapters[index] = new A();
-		}
-		foreach(int index, M; ModelTypes) {
-			_modelStore[index] = new ModelStore;
-		}
-	}
-
 	static @property PersistenceStore!A sandbox() {
 		return new PersistenceStore!A();
 	}
@@ -155,12 +146,6 @@ class PersistenceStore(A ...) {
 			_store = new PersistenceStore!A();
 		}
 		return _store;
-	}
-
-	/// Returns the instance of the give adapter type
-	@property A adapter(A)() {
-		auto index = staticIndexOf!(A, AdapterTypes);
-		return cast(A)_adapters[index];
 	}
 
 	/// Returns the adapters that have the model M registered
@@ -177,21 +162,14 @@ class PersistenceStore(A ...) {
 	bool save(M)(M model) {
 		bool result = true;
 
-		foreach(index, AdapterType; AdapterTypes) {
-			auto adapter = cast(AdapterType)(_adapters[index]);
-			if (adapter.modelIsRegistered!M) {
-				if (!adapter.save(model)) result = false;
+		foreach(AdapterType; AdapterTypes) {
+			auto a = adapter!AdapterType;
+			if (a.modelIsRegistered!M) {
+				if (!a.save(model)) result = false;
 			}
 		}
 
 		return result;
-	}
-
-	// Returns the store object for the given model
-	ModelStore modelStore(M)() {
-		auto i = staticIndexOf!(M, ModelTypes);
-		assert(i != -1, "Attempted to look up store for unregistered model: " ~ M.stringof);
-		return _modelStore[i];
 	}
 
 	void inject(M : ModelInterface)(M m) {
@@ -261,6 +239,27 @@ class PersistenceStore(A ...) {
 	}
 
 private:
+	// Returns a lazy initialized adapter at the given index, cast into A. 
+	@property A adapter(A)() {
+		auto index = staticIndexOf!(A, AdapterTypes);
+		auto a = _adapters[index];
+		if (a) return cast(A)a;
+		a = new A();
+		_adapters[index] = a;
+		return cast(A)a;
+	}
+
+	// Returns the store object for the given model
+	@property ModelStore modelStore(M)() {
+		auto i = staticIndexOf!(M, ModelTypes);
+		assert(i != -1, "Attempted to look up store for unregistered model: " ~ M.stringof);
+		auto ms = _modelStore[i];
+		if (ms) return ms;
+		ms = new ModelStore;
+		_modelStore[i] = ms;
+		return ms;
+	}
+	
 	struct IndexMeta {
 		string name;
 		string function(ModelInterface) getKey;
@@ -280,99 +279,101 @@ private:
 	ModelStore[ModelTypes.length] _modelStore;
 }
 
-version (unittest) {
-	import aura.persistence.core.relations;
+debug (persistenceIntegration) {
+	version (unittest) {
+		import aura.persistence.core.relations;
 
-	class TestModelBase : ModelInterface {
-		mixin PersistenceTypeMixin;
-		@ignore @property string persistenceId() const { return _id; }
-		@property void persistenceId(string id) { _id = id; }
-		void ensureId() {}
+		class TestModelBase : ModelInterface {
+			mixin PersistenceTypeMixin;
+			@ignore @property string persistenceId() const { return _id; }
+			@property void persistenceId(string id) { _id = id; }
+			void ensureId() {}
 
-		string _id;
-	}
-
-	class Person : TestModelBase {
-		string firstName;
-		string surname;
-		string companyReference;
-
-		//mixin BelongsTo!(ApplicationStore, Company, "", "companyReference", "reference");
-	}
-
-	class Company : TestModelBase {
-		string name;
-		string reference;
-	}
-
-	class Adapter1 : PersistenceAdapter!(Person, Company) {
-		bool save(M)(const M model) {
-			writeln("Adapter 1 is saving".color(fg.light_blue));
-			return true;
+			string _id;
 		}
 
-		ModelType[] findMany(ModelType, string key = "", IdType)(const IdType[] ids ...) {
-			ModelType[] models;
-			return models;
+		class Person : TestModelBase {
+			string firstName;
+			string surname;
+			string companyReference;
+
+			//mixin BelongsTo!(ApplicationStore, Company, "", "companyReference", "reference");
 		}
 
-		ModelType findOne(ModelType, string key = "", IdType)(const IdType id) {
-			ModelType model;
-			return model;
+		class Company : TestModelBase {
+			string name;
+			string reference;
 		}
-	}
 
-	class Adapter2 : PersistenceAdapter!(Company) {
-		bool save(M)(const M model) {
-			writeln("Adapter 2 is saving".color(fg.light_cyan));
-			return true;
+		class Adapter1 : PersistenceAdapter!(Person, Company) {
+			bool save(M)(const M model) {
+				writeln("Adapter 1 is saving".color(fg.light_blue));
+				return true;
+			}
+
+			ModelType[] findMany(ModelType, string key = "", IdType)(const IdType[] ids ...) {
+				ModelType[] models;
+				return models;
+			}
+
+			ModelType findOne(ModelType, string key = "", IdType)(const IdType id) {
+				ModelType model;
+				return model;
+			}
 		}
-	}
 
-	class ApplicationStore : PersistenceStore!(Adapter1, Adapter2) {
-	}
+		class Adapter2 : PersistenceAdapter!(Company) {
+			bool save(M)(const M model) {
+				writeln("Adapter 2 is saving".color(fg.light_cyan));
+				return true;
+			}
+		}
 
-	alias sharedStore = ApplicationStore.sharedInstance;
+		class ApplicationStore : PersistenceStore!(Adapter1, Adapter2) {
+		}
 
-	unittest {
-		auto person = sharedStore.findInStore!Person("fakeId");
-		assert(!person);
-		person = new Person;
-		person.firstName = "David";
-		person.surname = "Monagle";
-		person.companyReference = "aura-001";
-		person.persistenceId = "1";
-		sharedStore.inject(person);
-		auto lookup = sharedStore.findInStore!Person("0");
-		assert(!lookup);
-		lookup = sharedStore.findInStore!Person("1");
-		assert(lookup == person);
+		alias sharedStore = ApplicationStore.sharedInstance;
 
-		sharedStore.addIndex!(Company, "reference");
-		auto company = new Company;
-		company.name = "Aura Inc";
-		company.reference = "aura-001";
-		company.persistenceId = "1";
-		sharedStore.inject(company);
-		auto lookupCompany = sharedStore.findInStore!(Company, "reference")("1");
-		assert(!lookupCompany);
-		lookupCompany = sharedStore.findInStore!(Company, "reference")("aura-001");
-		assert(lookupCompany == company);
+		unittest {
+			auto person = sharedStore.findInStore!Person("fakeId");
+			assert(!person);
+			person = new Person;
+			person.firstName = "David";
+			person.surname = "Monagle";
+			person.companyReference = "aura-001";
+			person.persistenceId = "1";
+			sharedStore.inject(person);
+			auto lookup = sharedStore.findInStore!Person("0");
+			assert(!lookup);
+			lookup = sharedStore.findInStore!Person("1");
+			assert(lookup == person);
 
-		auto many = sharedStore.findMany!(Company, "reference")("aura-001", "aura-002");
-		assert(many.length == 1, "Expected length of 1 but got " ~ many.length.to!string);
-		assert(many[0].reference == "aura-001");
+			sharedStore.addIndex!(Company, "reference");
+			auto company = new Company;
+			company.name = "Aura Inc";
+			company.reference = "aura-001";
+			company.persistenceId = "1";
+			sharedStore.inject(company);
+			auto lookupCompany = sharedStore.findInStore!(Company, "reference")("1");
+			assert(!lookupCompany);
+			lookupCompany = sharedStore.findInStore!(Company, "reference")("aura-001");
+			assert(lookupCompany == company);
 
-		auto one = sharedStore.findOne!(Company, "reference")("aura-001");
-		assert(one.reference == "aura-001");
+			auto many = sharedStore.findMany!(Company, "reference")("aura-001", "aura-002");
+			assert(many.length == 1, "Expected length of 1 but got " ~ many.length.to!string);
+			assert(many[0].reference == "aura-001");
 
-		sharedStore.save(one);
+			auto one = sharedStore.findOne!(Company, "reference")("aura-001");
+			assert(one.reference == "aura-001");
 
-		auto foreignCompany = sharedStore.findOne!(Company, "reference")(person.companyReference);
-		assert(foreignCompany == company);
+			sharedStore.save(one);
 
-		assert(sharedStore.adapter!Adapter1.containerName!Company == "companies");
-		sharedStore.adapter!Adapter1.containerName!Company = "kompaniez";
-		assert(sharedStore.adapter!Adapter1.containerName!Company == "kompaniez");
+			auto foreignCompany = sharedStore.findOne!(Company, "reference")(person.companyReference);
+			assert(foreignCompany == company);
+
+			assert(sharedStore.adapter!Adapter1.containerName!Company == "companies");
+			sharedStore.adapter!Adapter1.containerName!Company = "kompaniez";
+			assert(sharedStore.adapter!Adapter1.containerName!Company == "kompaniez");
+		}
 	}
 }
