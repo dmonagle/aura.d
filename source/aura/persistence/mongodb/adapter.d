@@ -37,9 +37,6 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 		_databaseName = name;
 	}
 	
-	this() {
-	}
-	
 	MongoCollection getCollection(string collection) {
 		return client.getCollection(collectionPath(collection));
 	}

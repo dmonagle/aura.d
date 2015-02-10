@@ -132,7 +132,6 @@ class PersistenceStore(A ...) {
 	alias AdapterTypes = TypeTuple!A;
 	alias ModelTypes = NoDuplicates!(staticMap!(adapterModels, AdapterTypes));
 
-
 	// Make sure that each adapter is only added once
 	static assert (AdapterTypes.length == NoDuplicates!(AdapterTypes).length, "Store can not have more than one of the same type of adapter");
 
@@ -145,6 +144,16 @@ class PersistenceStore(A ...) {
 		alias adapters = adaptersFor!M;
 		static assert(adapters.length, "No adapter found in store for model " ~ M.stringof);
 		alias adapterFor = adapter!(adapters[0]);
+	}
+
+	// Returns a lazy initialized adapter at the given index, cast into A. 
+	static @property A adapter(A)() {
+		auto index = staticIndexOf!(A, AdapterTypes);
+		auto a = _adapters[index];
+		if (a) return cast(A)a;
+		a = new A();
+		_adapters[index] = a;
+		return cast(A)a;
 	}
 
 	bool save(M)(M model) {
@@ -230,16 +239,6 @@ class PersistenceStore(A ...) {
 	}
 
 private:
-	// Returns a lazy initialized adapter at the given index, cast into A. 
-	@property A adapter(A)() {
-		auto index = staticIndexOf!(A, AdapterTypes);
-		auto a = _adapters[index];
-		if (a) return cast(A)a;
-		a = new A();
-		_adapters[index] = a;
-		return cast(A)a;
-	}
-
 	// Returns the store object for the given model
 	@property ModelStore modelStore(M)() {
 		auto i = staticIndexOf!(M, ModelTypes);
@@ -266,7 +265,7 @@ private:
 		}
 	}
 
-	PersistenceAdapterInterface[AdapterTypes.length] _adapters;
+	static PersistenceAdapterInterface[AdapterTypes.length] _adapters;
 	ModelStore[ModelTypes.length] _modelStore;
 }
 
@@ -370,6 +369,10 @@ debug (persistenceIntegration) {
 			assert(sharedStore.adapter!Adapter1.containerName!Company == "companies");
 			sharedStore.adapter!Adapter1.containerName!Company = "kompaniez";
 			assert(sharedStore.adapter!Adapter1.containerName!Company == "kompaniez");
+
+			auto newStore = new ApplicationStore;
+
+			assert (newStore.adapter!Adapter1 == sharedStore.adapter!Adapter1);
 		}
 	}
 }
