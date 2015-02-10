@@ -135,15 +135,21 @@ class PersistenceStore(A ...) {
 	// Make sure that each adapter is only added once
 	static assert (AdapterTypes.length == NoDuplicates!(AdapterTypes).length, "Store can not have more than one of the same type of adapter");
 
-	/// Returns the adapters that have the model M registered
-	template adaptersFor(M) {
-		alias adaptersFor = Filter!(RegisteredModel!M.inAdapter, AdapterTypes);
+	/// Returns the adapters types that have the model M registered
+	template adapterTypesFor(M) {
+		alias adapterTypesFor = Filter!(RegisteredModel!M.inAdapter, AdapterTypes);
 	}
 
-	template adapterFor(M) {
-		alias adapters = adaptersFor!M;
+	/// Returns the first adapter type that has the model M registered
+	template adapterTypeFor(M) {
+		alias adapters = adapterTypesFor!M;
 		static assert(adapters.length, "No adapter found in store for model " ~ M.stringof);
-		alias adapterFor = adapter!(adapters[0]);
+		alias adapterTypeFor = adapters[0];
+	}
+
+	/// Returns the first registered adapter for the give model (M)
+	template adapterFor(M) {
+		alias adapterFor = adapter!(adapterTypeFor!M);
 	}
 
 	// Returns a lazy initialized adapter at the given index, cast into A. 
@@ -169,11 +175,19 @@ class PersistenceStore(A ...) {
 		return result;
 	}
 
-	void inject(M : ModelInterface)(M m) {
-		modelStore!M.inject(m);
+	/// Sets the give models persistenceStore property if the given model implements it
+	void setStoreOnModel(M)(M m) {
 		static if (__traits(hasMember, M, "persistenceStore") && (is(M.PersistenceStoreType : PersistenceStore!A))) {
 			m.persistenceStore = cast(m.PersistenceStoreType)this;
 		}
+	}
+
+	void inject(M : ModelInterface)(M m) {
+		modelStore!M.inject(m);
+		setStoreOnModel(m);
+		ensureEmbedded!((embeddedModel) {
+				setStoreOnModel(embeddedModel);
+		})(m);
 	}
 
 	void inject(M : ModelInterface)(M[] models) {
@@ -192,14 +206,18 @@ class PersistenceStore(A ...) {
 		return cast(M)modelStore!M.get!M(key, id.to!string);
 	}
 
-	M[] queryModel(M, A : PersistenceAdapterInterface, T)(const T query) {
+	M[] query(M, A : PersistenceAdapterInterface, T)(const T q) {
 		M[] returnModels;
 
 		auto adapter = adapter!A;
-		adapter.storeQuery!M(this, query, (model) { returnModels ~= model; });
+		adapter.storeQuery!M(this, q, (model) { returnModels ~= model; });
 		inject!M(returnModels);
 
 		return returnModels;
+	}
+
+	M[] query(M, T)(const T q) {
+		return query!(M, adapterTypeFor!M)(q);
 	}
 
 	M[] findMany(M, string key = "", IdType)(const IdType[] ids ...) {

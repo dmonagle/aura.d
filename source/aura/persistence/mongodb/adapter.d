@@ -121,9 +121,9 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 		import std.array;
 		import std.algorithm;
 		
-		this.find!ModelType(query, 
+		this.query!ModelType(query, 
 			(bsonModel) {
-				ModelType model = store.findInStore(bsonModel._id.to!string);
+				ModelType model = store.findInStore!ModelType(bsonModel._id.to!string);
 				auto injectInStore = model ? false : true;
 				deserializeBson(model, bsonModel);
 				if (injectInStore) store.inject(model);

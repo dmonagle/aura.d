@@ -8,10 +8,13 @@ public import aura.data.bson;
 
 import std.datetime;
 
-mixin template MongoModel(ModelType) {
+/// Optional second template parameter is to specify the Store and mixes in the PersistenceStore property
+mixin template MongoModel(ModelType, alias StoreType = null) {
 	@optional BsonObjectID _id;
 	mixin PersistenceTypeProperty;
-	mixin PersistenceStoreProperty;
+	static if (!is(typeof(StoreType) == typeof(null))) {
+		mixin PersistenceStoreProperty!StoreType;
+	}
 
 	@property const string _type() { return persistenceType; }
 	// Dummy setter so that _type will be serialized
@@ -98,27 +101,32 @@ version(unittest) {
 }
 
 void ensureEmbeddedMongoIds(M)(ref M model) {
-	foreach (memberName; __traits(allMembers, M)) {
-		//static if (isRWPlainField!(M, memberName) || isRWField!(M, memberName)) {
-		static if (is(typeof(__traits(getMember, model, memberName)))) {
-			static if (__traits(getProtection, __traits(getMember, model, memberName)) == "public") {
-				alias member = TypeTuple!(__traits(getMember, M, memberName));
-				alias embeddedUDA = findFirstUDA!(EmbeddedAttribute, member);
-				static if (embeddedUDA.found) {
-					auto embeddedModel = __traits(getMember, model, memberName);
-					if (embeddedModel.isNotNull) {
-						static if (isArray!(typeof(embeddedModel))) {
-							foreach(ref m; embeddedModel) {
-								m.ensureId(); // Ensure the ID of each model in the array
-								ensureEmbeddedMongoIds(m); // Ensure any recursive Ids
-							}
-						} else {
-							embeddedModel.ensureId();
-							ensureEmbeddedMongoIds(embeddedModel);
-						}
-					}
-				}
-			}
+	ensureEmbedded!((m) => m.ensureId)(model);
+}
+
+unittest {
+	import std.stdio;
+	import colorize;
+
+	class Embedded : ModelInterface {
+		mixin MongoModel!Embedded;
+	}
+
+	class TestModel : ModelInterface {
+		mixin MongoModel!TestModel;
+
+		@embedded Embedded embed;
+
+		this() {
+			embed = new Embedded;
 		}
 	}
+
+	auto test = new TestModel;
+
+	ensureEmbedded!((model) {
+			model.ensureId;
+			writeln(typeid(model).toString.color(fg.green));
+			writeln(model.persistenceId.color(fg.yellow));
+		})(test);
 }
