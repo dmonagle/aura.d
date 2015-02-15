@@ -188,19 +188,10 @@ class PersistenceStore(A ...) {
 		return result;
 	}
 
-	/// Sets the give models persistenceStore property if the given model implements it
-	void setStoreOnModel(M)(M m) {
-		static if (__traits(hasMember, M, "persistenceStore") && (is(M.PersistenceStoreType : PersistenceStore!A))) {
-			m.persistenceStore = cast(m.PersistenceStoreType)this;
-		}
-	}
-
 	void inject(M : ModelInterface)(M m) {
 		assert(!m.isNew, "Attempt to inject a model into a store before it has an id.");
 		modelStore!M.inject(m);
-		setStoreOnModel(m);
 		ensureEmbedded!((embeddedModel) {
-				setStoreOnModel(embeddedModel);
 				embeddedModel.ensureId;
 			})(m);
 	}

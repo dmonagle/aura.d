@@ -35,7 +35,7 @@ void ensureEmbedded(alias action, M)(ref M model) {
 						static if (isArray!(typeof(embeddedModel))) {
 							foreach(ref m; embeddedModel) {
 								action(m); // Run the action on each item in the array
-								ensureEmbedded!M(m, action); // Ensure any recursive Ids
+								ensureEmbedded!action(m); // Ensure recursive
 							}
 						} else {
 							action(embeddedModel);
