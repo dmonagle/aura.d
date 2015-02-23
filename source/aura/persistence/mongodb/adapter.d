@@ -157,7 +157,7 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 		this.query!ModelType(query, 
 			(bsonModel) {
 				ModelType model = store.findInStore!ModelType(bsonModel._id.to!string);
-				auto injectInStore = model ? false : true;
+				auto injectInStore = model ? false : true; // If findInStore returned null, the model should be injected into the store after deserialization
 				deserializeBson(model, bsonModel);
 				if (injectInStore) store.inject(model);
 				if (pred) pred(model);
@@ -166,7 +166,7 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 	}
 	
 	/// Returns an array of deserialized models matching the list of ids given
-	ModelType[] findModels(ModelType, string key = "", IdType)(const IdType[] ids ...) {
+	ModelType[] storeFindMany(ModelType, string key = "", StoreType, IdType)(StoreType store, const IdType[] ids ...) {
 		import std.array;
 		import std.algorithm;
 		
@@ -186,7 +186,7 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 	}
 	
 	/// Returns a single deserialized model matching the given id
-	ModelType findModel(ModelType, string key = "", IdType)(const IdType id) {
+	ModelType storeFindOne(ModelType, string key = "", StoreType, IdType)(StoreType store, const IdType id) {
 		import std.conv;
 
 		ModelType model;

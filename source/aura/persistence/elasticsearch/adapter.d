@@ -67,12 +67,7 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 		}
 	}
 
-	void save(M)(const ref Json model) {
-		auto meta = modelMeta!M;
-		client.index(indexName(containerName!M), meta.type, model._id.to!string, model.toString());
-	}
-
-	void save(M)(M model) {
+	bool save(M)(ref M model) {
 		static if (__traits(compiles, model.toIndexedJson)) {
 			auto json = model.toIndexedJson;
 		}
@@ -80,7 +75,8 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 			auto json = model.serializeToJson;
 		}
 
-		save!M(json);
+		client.index(indexName(containerName!M), model.persistenceType, model.persistenceId, json.toString);
+		return true;
 	}
 
 	Json search(M)(string searchBody, Parameters params = Parameters()) {
@@ -99,25 +95,16 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 	}
 
 	/// Returns an array of deserialized models matching the list of ids given
-	ModelType[] findModel(ModelType, string key = "id", IdType)(IdType[] ids ...) {
+	ModelType[] storeFindMany(ModelType, string key = "", StoreType, IdType)(StoreType store, const IdType[] ids ...) {
 		ModelType[] returnModels;
 
 		return returnModels;
 	}
 	
 	/// Returns a single deserialized model matching the given id
-	ModelType findModel(ModelType, string key = "id", IdType)(IdType id) {
+	ModelType storeFindOne(ModelType, string key = "", StoreType, IdType)(StoreType store, const IdType id) {
 		ModelType returnModel;
 		
 		return returnModel;
 	}
-	
-	bool save(M)(ref M model) {
-		return true;
-	}
-	
-	bool remove(M)(ref M model) {
-		return true;
-	}
-
 }

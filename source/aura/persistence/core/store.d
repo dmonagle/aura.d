@@ -16,7 +16,8 @@ import std.algorithm;
 import std.stdio;
 import colorize;
 
-class ModelStore {
+/// Caches and indexes model references with ability to expire
+class ModelCache {
 	this() {
 		_storeLife = 3.seconds;
 	}
@@ -108,7 +109,7 @@ version (unittest) {
 			string companyReference;
 		}
 
-		auto modelStore = new ModelStore;
+		auto modelStore = new ModelCache;
 		modelStore.addIndex!(Person, "firstName");
 
 		Person person = new Person();
@@ -177,7 +178,7 @@ class PersistenceStore(A ...) {
 
 		foreach(AdapterType; AdapterTypes) {
 			auto a = adapter!AdapterType;
-			if (a.modelIsRegistered!M) {
+			static if (a.modelIsRegistered!M) {
 				if (!a.save(model)) result = false;
 			}
 		}
@@ -254,7 +255,7 @@ class PersistenceStore(A ...) {
 
 		if (adapterSearchIds.length) {
 			auto adapter = adapterFor!M;
-			auto adapterModels = adapter.findModels!(M, key)(adapterSearchIds);
+			auto adapterModels = adapter.storeFindMany!(M, key)(this, adapterSearchIds);
 			returnModels ~= adapterModels;
 			inject!M(adapterModels);
 		}
@@ -267,7 +268,7 @@ class PersistenceStore(A ...) {
 		
 		if (!returnModel) {
 			auto adapter = adapterFor!M;
-			returnModel = adapter.findModel!(M, key)(id);
+			returnModel = adapter.storeFindOne!(M, key)(this, id);
 			if (returnModel) inject!M(returnModel);
 		}
 		
@@ -276,12 +277,12 @@ class PersistenceStore(A ...) {
 
 private:
 	// Returns the store object for the given model
-	@property ModelStore modelStore(M)() {
+	@property ModelCache modelStore(M)() {
 		auto i = staticIndexOf!(M, ModelTypes);
 		assert(i != -1, "Attempted to look up store for unregistered model: " ~ M.stringof);
 		auto ms = _modelStore[i];
 		if (ms) return ms;
-		ms = new ModelStore;
+		ms = new ModelCache;
 		_modelStore[i] = ms;
 		return ms;
 	}
@@ -302,7 +303,7 @@ private:
 	}
 
 	static PersistenceAdapterInterface[AdapterTypes.length] _adapters;
-	ModelStore[ModelTypes.length] _modelStore;
+	ModelCache[ModelTypes.length] _modelStore;
 }
 
 debug (persistenceIntegration) {
@@ -338,12 +339,12 @@ debug (persistenceIntegration) {
 				return true;
 			}
 			
-			ModelType[] findModels(ModelType, string key = "", IdType)(const IdType[] ids ...) {
+			ModelType[] storeFindMany(ModelType, string key = "", StoreType, IdType)(StoreType s, const IdType[] ids ...) {
 				ModelType[] models;
 				return models;
 			}
 			
-			ModelType findModel(ModelType, string key = "", IdType)(const IdType id) {
+			ModelType storeFindOne(ModelType, string key = "", StoreType, IdType)(StoreType store, const IdType id) {
 				ModelType model;
 				return model;
 			}
