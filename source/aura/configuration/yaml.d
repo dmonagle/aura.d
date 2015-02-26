@@ -7,6 +7,10 @@ import std.file;
 import std.path;
 import std.algorithm;
 
+debug {
+	import std.stdio;
+}
+
 Node processYamlConfigPath(string path, string environment) {
 	auto y = processYamlConfigDirectory(path, environment);
 	y = y.merge(processYamlConfigDirectory(buildPath(path, environment)));
@@ -21,10 +25,11 @@ Node processYamlConfigDirectory(string directory, string environment = "") {
 	auto n = Node(cast(string[string])null);
 	
 	if (!directory.exists || !directory.isDir) return n;
+	debug writefln("Processing Config Directory '%s' for environment '%s'", directory, environment);
 	// Iterate a directory in breadth
 	foreach (string path; dirEntries(directory, SpanMode.shallow))
 	{
-		if ([".yml", ".yaml", "conf", "config"].canFind(path.extension)) {
+		if ([".yml", ".yaml", ".conf", ".config"].canFind(path.extension)) {
 			auto node = processYamlConfigFile(path, environment);
 			if (node.isValid) n[path.baseName(path.extension)] = node;
 		}
@@ -37,6 +42,7 @@ Node processYamlConfigDirectory(string directory, string environment = "") {
 Node processYamlConfigFile(string fileName, string environment = "") {
 	Node returnNode;
 	
+	debug writefln("Processing Config File '%s' for environment '%s'", fileName, environment);
 	auto yamlConfig = Loader(fileName).load();
 	if (environment.length) {
 		if (yamlConfig.containsKey(environment)) 
