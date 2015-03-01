@@ -163,6 +163,10 @@ class PersistenceStore(A ...) {
 		return _store;
 	}
 
+	static @property T instanceAs(T)() {
+		return cast(T)instance();
+	}
+
 	// Returns a lazy initialized adapter at the given index, cast into A. 
 	static @property A adapter(A)() {
 		auto index = staticIndexOf!(A, AdapterTypes);

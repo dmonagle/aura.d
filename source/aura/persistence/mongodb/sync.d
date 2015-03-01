@@ -81,7 +81,7 @@ struct SyncMeta {
 	}
 }
 
-struct ModelSyncMeta(M, S) {
+struct ModelSyncMeta(S, M) {
 	private {
 		@ignore const M _model;
 		@ignore S _store;
@@ -89,7 +89,7 @@ struct ModelSyncMeta(M, S) {
 	
 	SyncMeta _syncMeta;
 	
-	this(const M model, S store, const string[] requiredServices ...) {
+	this(S store, const M model, const string[] requiredServices ...) {
 		_model = model;
 		_store = store;
 		
@@ -97,7 +97,7 @@ struct ModelSyncMeta(M, S) {
 		
 		auto query = ["modelType": Bson(M.stringof), "modelId": Bson(model._id)].serializeToBson;
 		_store.query!SyncMeta(query, (result) {
-			_syncMeta.deserializeBson(result);
+			_syncMeta = result;
 		}, 1);
 		
 		if (!_syncMeta._id.valid) {
@@ -152,11 +152,6 @@ struct ModelSyncMeta(M, S) {
 		return service.needsSync(_model.syncHash);
 	}
 	
-}
-
-/// Helper function to initialize a ModelSyncMeta!M struct
-ModelSyncMeta!M modelSync(M)(const M model, const string[] requiredServices ...) {
-	return ModelSyncMeta!M(model, requiredServices);
 }
 
 version (unittest) {

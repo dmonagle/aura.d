@@ -16,10 +16,6 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 		string[] _hosts;
 	}
 
-	this() {
-	}
-
-	@property ref string[] hosts() { return _hosts; }
 	@property ref string[] hosts() { return _hosts; }
 
 	@property Client client() {
@@ -48,11 +44,8 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 		return databaseName ~ "_" ~ cName;
 	}
 
-	void ensureIndex(M)(string content, bool drop = false) {
+	void ensureIndex(M)(string content) {
 		auto name = indexName(containerName!M);
-		if (drop) {
-			deleteIndex!M;
-		}
 		if (!_client.indexExists(name)) {
 			logInfo("Creating Elasticsearch Index: '%s'", name);
 			_client.createIndex(name, content);
