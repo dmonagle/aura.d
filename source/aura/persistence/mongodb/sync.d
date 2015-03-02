@@ -81,23 +81,23 @@ struct SyncMeta {
 	}
 }
 
-struct ModelSyncMeta(S, M) {
+struct ModelSyncMeta(A, M) {
 	private {
 		@ignore const M _model;
-		@ignore S _store;
+		@ignore A _adapter;
 	}
 	
 	SyncMeta _syncMeta;
 	
-	this(S store, const M model, const string[] requiredServices ...) {
+	this(A adapter, const M model, const string[] requiredServices ...) {
 		_model = model;
-		_store = store;
+		_adapter = adapter;
 		
 		assert(model._id.valid, "You can only use SyncMeta on a model with an Id");
 		
 		auto query = ["modelType": Bson(M.stringof), "modelId": Bson(model._id)].serializeToBson;
-		_store.query!SyncMeta(query, (result) {
-			_syncMeta = result;
+		_adapter.query!SyncMeta(query, (result) {
+			deserializeBson(_syncMeta, result);
 		}, 1);
 		
 		if (!_syncMeta._id.valid) {
@@ -114,7 +114,7 @@ struct ModelSyncMeta(S, M) {
 	
 	bool save() {
 		_syncMeta._syncHash = _model.syncHash;
-		return _syncMeta.save();
+		return _adapter.save(_syncMeta);
 	}
 	
 	@property bool changed() const {
