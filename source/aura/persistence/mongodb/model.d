@@ -16,9 +16,11 @@ mixin template MongoModel(ModelType, alias StoreType = null) {
 		mixin PersistenceStoreProperty!StoreType;
 	}
 
-	@property const string _type() { return persistenceType; }
-	// Dummy setter so that _type will be serialized
-	@optional @property void _type(string value) {}
+	@optional {
+		@property const string _type() { return persistenceType; }
+		// Dummy setter so that _type will be serialized
+		@property void _type(string value) {}
+	}
 	
 	@ignore @property BsonObjectID id() const { return _id; } 
 	@optional @property void id(BsonObjectID id) { _id = id; } 

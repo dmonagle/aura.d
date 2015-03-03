@@ -46,17 +46,17 @@ class EsAdapter(M ...) : PersistenceAdapter!M {
 
 	void ensureIndex(M)(string content) {
 		auto name = indexName(containerName!M);
-		if (!_client.indexExists(name)) {
+		if (!client.indexExists(name)) {
 			logInfo("Creating Elasticsearch Index: '%s'", name);
-			_client.createIndex(name, content);
+			client.createIndex(name, content);
 		}
 	}
 
 	void deleteIndex(M)() {
 		auto name = indexName(containerName!M);
-		if (_client.indexExists(name)) {
+		if (client.indexExists(name)) {
 			logInfo("Deleting Elasticsearch Index: '%s'", name);
-			_client.deleteIndex(name);
+			client.deleteIndex(name);
 		}
 	}
 

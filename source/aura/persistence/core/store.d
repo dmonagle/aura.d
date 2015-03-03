@@ -3,6 +3,7 @@
 import aura.persistence.core.adapter;
 import aura.persistence.core.model;
 import aura.util.string_transforms;
+import aura.util.null_bool;
 
 import vibe.data.serialization;
 
@@ -154,17 +155,14 @@ class PersistenceStore(A ...) {
 		alias adapterFor = adapter!(adapterTypeFor!M);
 	}
 
-	/// Returns the sharedInstance of the store
-	static @property PersistenceStore!A instance() {
-		static PersistenceStore!A _store;
-
-		if (!_store) _store = new PersistenceStore!A;
-
-		return _store;
+	/// Returns the sharedInstance of the store, this will not initialize the store if it is unset
+	static @property PersistenceStore!A sharedInstance() {
+		return _sharedStore;
 	}
 
-	static @property T instanceAs(T)() {
-		return cast(T)instance();
+	static @property T sharedInstanceAs(T)() {
+		if (!_sharedStore) _sharedStore = new T;
+		return cast(T)sharedInstance();
 	}
 
 	// Returns a lazy initialized adapter at the given index, cast into A. 
@@ -248,12 +246,14 @@ class PersistenceStore(A ...) {
 		IdType[] adapterSearchIds;
 
 		foreach(id; ids) {
-			auto result = findInStore!(M, key)(id);
-			if (result) {
-				returnModels ~= result;
-			}
-			else {
-				adapterSearchIds ~= id;
+			if (isNotNull(id)) {
+				auto result = findInStore!(M, key)(id);
+				if (result) {
+					returnModels ~= result;
+				}
+				else {
+					adapterSearchIds ~= id;
+				}
 			}
 		}
 
@@ -268,7 +268,9 @@ class PersistenceStore(A ...) {
 	}
 
 	M findOne(M, string key = "", IdType)(const IdType id) {
-		M returnModel = findInStore!(M, key)(id);
+		M returnModel;
+		if (isNull(id)) return returnModel;
+		returnModel = findInStore!(M, key)(id);
 		
 		if (!returnModel) {
 			auto adapter = adapterFor!M;
@@ -280,6 +282,8 @@ class PersistenceStore(A ...) {
 	}
 
 private:
+	static PersistenceStore!A _sharedStore;
+
 	// Returns the store object for the given model
 	@property ModelCache modelStore(M)() {
 		auto i = staticIndexOf!(M, ModelTypes);

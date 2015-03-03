@@ -18,7 +18,7 @@ string defineBelongsTo(S, M, string propertyName, string key, string foreignKey)
 
 	return format(`
 		@ignore @property %1$s %2$s() {
-			return %3$s.instance.findOne!(%1$s, "%5$s")(%4$s);
+			return %3$s.sharedInstance.findOne!(%1$s, "%5$s")(%4$s);
 		}
 	`, M.stringof, _propertyName, S.stringof, _key, foreignKey);
 }
@@ -46,7 +46,7 @@ string defineOuterBelongsTo(S, L, M, string propertyName, string key, string for
 	
 	return format(`
 		%1$s %2$s(%6$s model) {
-			return %3$s.instance.findOne!(%1$s, "%5$s")(model.%4$s);
+			return %3$s.sharedInstance.findOne!(%1$s, "%5$s")(model.%4$s);
 		}
 	`, M.stringof, _propertyName, S.stringof, _key, foreignKey, L.stringof);
 }
