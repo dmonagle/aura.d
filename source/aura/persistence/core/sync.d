@@ -55,8 +55,7 @@ struct SyncMeta {
 	/// Returns the specified serviceName, creating it if necessary
 	ref SyncServiceMeta ensureService(string serviceName) {
 		if (!serviceExists(serviceName)) {
-			auto serviceMeta = SyncServiceMeta();
-			services[serviceName] = serviceMeta;
+			services[serviceName] = SyncServiceMeta();
 		}
 		return services[serviceName];
 	}
@@ -65,6 +64,18 @@ struct SyncMeta {
 	void ensureServices(const string[] requiredServices ...) {
 		foreach(serviceName; requiredServices) {
 			ensureService(serviceName);
+		}
+	}
+	
+	/// Clears the sync data for the specified serviceName
+	void clearService(string serviceName) {
+		if (serviceExists(serviceName)) services.remove(serviceName);
+	}
+	
+	/// Takes a list of serviceNames and removes sync data
+	void clearServices(const string[] services ...) {
+		foreach(serviceName; services) {
+			clearService(serviceName);
 		}
 	}
 	
@@ -131,13 +142,21 @@ struct ModelSyncMeta(M) {
 		}
 		return false;
 	}
-	
+
 	void ensureServices(const string[] requiredServices ...) {
 		_syncMeta.ensureServices(requiredServices);
 	}
 	
 	void ensureService(string serviceName) {
 		_syncMeta.ensureService(serviceName);
+	}
+	
+	void clearServices(const string[] services ...) {
+		_syncMeta.clearServices(services);
+	}
+
+	void clearService(string serviceName) {
+		_syncMeta.clearService(serviceName);
 	}
 	
 	bool serviceNeedsSync(string serviceName) {
