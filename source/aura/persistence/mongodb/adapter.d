@@ -96,6 +96,10 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 		return collection.find(query);
 	}
 
+	auto queryCursor(ModelType)() {
+		return queryCursor!ModelType(Bson.emptyObject);
+	}
+
 	/// Executes the given query within the container for the model and calls the delegate for each match
 	/// passing in the Bson object
 	void query(ModelType, Q, S = typeof(null))(Q query, scope void delegate(Bson model) pred = null, uint limit = 0, S sort = null) {
