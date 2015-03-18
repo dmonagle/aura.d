@@ -2,7 +2,7 @@
 
 import aura.persistence.core;
 import aura.util.null_bool;
-import vibe.data.serialization;
+public import vibe.data.serialization;
 
 interface ModelInterface {
 	@ignore @property string persistenceId() const;
