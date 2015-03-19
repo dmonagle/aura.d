@@ -46,6 +46,7 @@ class PersistenceStore(A ...) {
 
 	/// Returns the sharedInstance of the store, this will not initialize the store if it is unset
 	static @property PersistenceStore!A sharedInstance() {
+		assert(_sharedStore, "Attempted to use the shared store while it was null. You probably want to call sharedInstanceAs!(T) first!");
 		return _sharedStore;
 	}
 
