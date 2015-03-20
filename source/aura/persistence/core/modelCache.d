@@ -18,6 +18,12 @@ class ModelCache {
 	struct IndexMeta {
 		string function(ModelInterface) getKey;
 	}
+
+	@property bool empty() const {
+		if ("" !in _store) return true;
+		if (_store[""].length == 0) return true;
+		return false;
+	}
 	
 	void addIndex(string key)(string function(ModelInterface) getKey) {
 		_indexMeta[key] = IndexMeta(getKey);
@@ -38,13 +44,13 @@ class ModelCache {
 	}
 	
 	void clean(bool all = false) {
-		if ("" in _store) {
-			foreach(id, model; _store[""])
-				if (all || hasExpired(model)) remove(model);
-		}
+		if (empty) return;
+		foreach(id, model; _store[""])
+			if (all || hasExpired(model)) remove(model);
 	}
 
 	void remove(ModelInterface m) {
+		if (empty) return;
 		_store[""].remove(m.persistenceId);
 		_expiryTime.remove(m.persistenceId);
 		foreach (key, meta; _indexMeta) {
@@ -124,13 +130,15 @@ version (unittest) {
 		
 		auto modelStore = new ModelCache;
 		modelStore.addIndex!(Person, "firstName");
+		assert(modelStore.empty);
 		
 		Person person = new Person();
 		person._id = "1";
 		person.firstName = "David";
 		
 		modelStore.inject(person);
-		
+		assert(!modelStore.empty);
+
 		assert(!modelStore.get!Person("2"));
 		assert(modelStore.get!Person("1"));
 		
@@ -139,6 +147,10 @@ version (unittest) {
 		
 		assert(!modelStore.get!Person("firstName", "Fred"));
 		assert(modelStore.get!Person("firstName", "David") == person);
+
+		modelStore.clean();
+		modelStore.clean(true);
+		assert(modelStore.empty);
 	}
 }
 
