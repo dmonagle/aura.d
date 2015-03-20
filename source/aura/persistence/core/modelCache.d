@@ -37,11 +37,11 @@ class ModelCache {
 		}
 	}
 	
-	void clean() {
+	void clean(bool all = false) {
 		foreach(id, model; _store[""])
-			if (hasExpired(model)) remove(model);
+			if (all || hasExpired(model)) remove(model);
 	}
-	
+
 	void remove(ModelInterface m) {
 		_store[""].remove(m.persistenceId);
 		_expiryTime.remove(m.persistenceId);

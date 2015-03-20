@@ -171,6 +171,12 @@ class PersistenceStore(A ...) {
 		return returnModel;
 	}
 
+	void cleanCache(bool all = false) {
+		foreach(cache; _modelStore) {
+			_modelStore.clean(all);
+		}
+	}
+
 private:
 	static PersistenceStore!A _sharedStore;
 
