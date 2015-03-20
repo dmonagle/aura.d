@@ -4,6 +4,11 @@ import aura.persistence.core.model;
 
 import std.datetime;
 
+version (unittest) {
+	import std.stdio;
+	import colorize;
+}
+
 /// Caches and indexes model references with ability to expire
 class ModelCache {
 	this() {
@@ -23,9 +28,11 @@ class ModelCache {
 	}
 	
 	void inject(ModelInterface m) {
+		version (unittest) { writefln("Injecting '%s'", m.persistenceId.color(fg.yellow)); }
 		_store[""][m.persistenceId] = m;
 		touch(m);
 		foreach (key, meta; _indexMeta) {
+			version (unittest) { writefln("Injecting '%s' into index '%s'", meta.getKey(m).color(fg.yellow), key); }
 			_store[key][meta.getKey(m)] = m;
 		}
 	}
@@ -44,11 +51,17 @@ class ModelCache {
 	}
 	
 	void touch(ModelInterface m) {
+		version (unittest) { writefln("Touching '%s'", m.persistenceId.color(fg.cyan)); }
 		_expiryTime[m.persistenceId] = Clock.currTime + _storeLife;
 	}
 	
 	bool hasExpired(ModelInterface m) {
-		return Clock.currTime >= _expiryTime[m.persistenceId];
+		return hasExpired(m.persistenceId);
+	}
+	
+	bool hasExpired(string persistenceId) {
+		version (unittest) { writefln("Checking expiry '%s'", persistenceId.color(fg.light_blue)); }
+		return Clock.currTime >= _expiryTime[persistenceId];
 	}
 	
 	ModelInterface[string] opIndex(string key) {
@@ -61,11 +74,20 @@ class ModelCache {
 	// TODO: Allow any id type as long as it can be converted to a string
 	ModelInterface get(M)(string key, string id) {
 		ModelInterface model;
+		version (unittest) { writefln("Getting '%s' from index '%s'", id.color(fg.light_blue), key); }
 		assert(key == "" || key in _indexMeta, "Attempted to look up unregistered key '" ~ key ~ "` in store for model '" ~ M.stringof ~ "'");
 		if (key !in _store) return model; // Return if nothing has been put into the index yet
 		
 		auto models = _store[key];
-		if (id in models) model = models[id];
+		if (id in models) {
+			version (unittest) { writefln("Found".color(fg.light_green)); }
+			version (unittest) { writefln("%s".color(fg.light_magenta), models); }
+			model = models[id];
+			if (hasExpired(model.persistenceId)) {
+				remove(model);
+				model = ModelInterface.init;
+			}
+		}
 		return cast(M)model;
 	}
 	
