@@ -38,8 +38,10 @@ class ModelCache {
 	}
 	
 	void clean(bool all = false) {
-		foreach(id, model; _store[""])
-			if (all || hasExpired(model)) remove(model);
+		if ("" in _store) {
+			foreach(id, model; _store[""])
+				if (all || hasExpired(model)) remove(model);
+		}
 	}
 
 	void remove(ModelInterface m) {

@@ -173,7 +173,7 @@ class PersistenceStore(A ...) {
 
 	void cleanCache(bool all = false) {
 		foreach(cache; _modelStore) {
-			cache.clean(all);
+			if (cache) cache.clean(all);
 		}
 	}
 
