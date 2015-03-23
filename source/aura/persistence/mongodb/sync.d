@@ -122,7 +122,6 @@ struct ModelSyncMeta(A, M) {
 				deserializeBson(_syncMeta, result);
 			}, 1);
 
-		logInfo(query.toJson.toPrettyString.color(!_syncMeta._id.valid ? fg.light_red : fg.light_green));
 		if (!_syncMeta._id.valid) {
 			_syncMeta.modelId = _model._id;
 			_syncMeta.modelType = M.stringof;

@@ -16,7 +16,16 @@ interface ModelInterface {
 mixin template PersistenceTypeProperty() {
 	@ignore @property string persistenceType() const {
 		import std.string;
-		return typeid(this).toString().split(".")[$ - 1];
+		import std.regex;
+
+		auto constMatch = ctRegex!`^const\((.*)\)$`;
+		auto typeString = typeid(this).toString();
+
+		if (auto matches = typeString.matchFirst(constMatch)) {
+			typeString = matches[1];
+		}
+
+		return typeString.split(".")[$ - 1];
 	}
 }
 
