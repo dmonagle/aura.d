@@ -107,17 +107,26 @@ struct ModelSyncMeta(A, M) {
 		
 		assert(model._id.valid, "You can only use SyncMeta on a model with an Id");
 		
-		auto query = ["modelType": Bson(M.stringof), "modelId": Bson(model._id)].serializeToBson;
+		load();
+
+		_syncMeta.ensureServices(requiredServices);
+	}
+
+	void load() {
+		import vibe.core.log;
+		import colorize;
+		import aura.data.json;
+
+		auto query = ["modelType": Bson(M.stringof), "modelId": Bson(_model._id)].serializeToBson;
 		_adapter.query!SyncMeta(query, (result) {
-			deserializeBson(_syncMeta, result);
-		}, 1);
-		
+				deserializeBson(_syncMeta, result);
+			}, 1);
+
+		logInfo(query.toJson.toPrettyString.color(!_syncMeta._id.valid ? fg.light_red : fg.light_green));
 		if (!_syncMeta._id.valid) {
-			_syncMeta.modelId = model._id;
+			_syncMeta.modelId = _model._id;
 			_syncMeta.modelType = M.stringof;
 		}
-		
-		_syncMeta.ensureServices(requiredServices);
 	}
 	
 	ref SyncServiceMeta opIndex(string serviceName) {
