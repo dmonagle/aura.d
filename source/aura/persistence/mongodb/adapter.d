@@ -92,7 +92,9 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 		auto bsonQuery = query.serializeToBson;
 		auto collection = getCollection!ModelType;
 		query._type = ModelType.stringof;
-		
+
+		logDebugV("Querying %s : '%s'", containerName!ModelType, query.toString);
+
 		return collection.find(query);
 	}
 
