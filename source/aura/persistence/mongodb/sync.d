@@ -175,13 +175,15 @@ struct ModelSyncMeta(A, M) {
 }
 
 version (unittest) {
-	import std.datetime;
-	
+	import aura.persistence.mongodb;
+
+
 	import vibe.d;
 	import std.digest.sha;
 	import std.datetime;
 	import std.stdio;
-	
+	import std.datetime;
+
 	class UserModel {
 		string name;
 		int age;
@@ -203,35 +205,41 @@ version (unittest) {
 		}
 		
 	}
-	
+
+	class UTSyncAdapter : MongoAdapter!(SyncMeta, UserModel) {
+	}
+
+	auto utSyncMeta(M, A)(A adapter, const M model, const string[] requiredServices ...) {
+		return ModelSyncMeta!(A, M)(adapter, model, requiredServices);
+	}
 }
 
-/*
 unittest {
+
 	import std.exception;
 
-	auto mongoAdapter = new MongoAdapter("mongodb://localhost/", "geo_server", "unittest");
-	
+	auto mongoAdapter = new UTSyncAdapter;
+	mongoAdapter.url = "mongodb://mongodb";
+	mongoAdapter.databaseName = format("aura_unittest");
+
 	mongoAdapter.dropCollection("sync_meta");
-	mongoAdapter.registerModel!SyncMeta(ModelMeta("sync_meta"));
 	mongoAdapter.ensureIndex!SyncMeta(["modelType": 1, "modelId": 1], IndexFlags.Unique);
 	mongoAdapter.dropCollection("user_models");
-	mongoAdapter.registerModel!UserModel(ModelMeta("user_models"));
-	
+
 	auto u = new UserModel;
 	u.name = "David";
 	u.age = 35;
 	
 	// We cannot retrieve a ModelSyncMeta struct for a model that has no Id
-	assertThrown!AssertError(modelSync(u));
-	
+	assertThrown!AssertError(utSyncMeta(mongoAdapter, u));
+
 	// Saving the user creates the Id
-	u.save;
+	mongoAdapter.save(u);
 	
 	// We should now be able to get the ModelSyncMeta with a call to modelSync with the model
 	// also we make sure the services we require exist
-	auto sync = modelSync(u, "webService1", "webService2");
-	
+	auto sync = utSyncMeta(mongoAdapter, u, "webService1", "webService2");
+
 	assert(!sync.serviceNeedsSync("undefinedService"));
 	
 	// Both of the new services need syncing
@@ -257,12 +265,10 @@ unittest {
 	sync.save;
 	
 	// If we retrieve this from the database, assert that it's getting the saved syncHash values
-	auto retrievedSync = modelSync(u);
+	auto retrievedSync = utSyncMeta(mongoAdapter, u);
 	u.age = 37;
 	assert(sync["webService1"].syncHash.length);
-	
 }
-*/
 
 SyncHash syncHash(M, string hashFunction = "sha1Of")(const M model) {
 	static if (__traits(compiles, model.stringForSyncHash)) {
