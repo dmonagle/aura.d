@@ -81,8 +81,8 @@ class MongoAdapter(M ...) : PersistenceAdapter!M {
 	}
 	
 	/// Removes the model from the database
-	bool remove(M)(ref M model) {
-		auto collection = getCollection(modelMeta!M.containerName);
+	bool remove(ModelType)(ref ModelType model) {
+		auto collection = getCollection!ModelType;
 		collection.remove(["_id": model.id]);
 		return true;
 	}

@@ -93,6 +93,16 @@ class PersistenceStore(A ...) {
 		foreach(m; models) inject(m);
 	}
 
+	void remove(M : ModelInterface)(M m) {
+		modelStore!M.remove(m);
+		foreach(AdapterType; AdapterTypes) {
+			auto a = adapter!AdapterType;
+			static if (a.modelIsRegistered!M) {
+				a.remove(m);
+			}
+		}
+	}
+
 	void addIndex(M, string key)(string function(ModelInterface) getKey) {
 		modelStore!M.addIndex!key(getKey);
 	}
