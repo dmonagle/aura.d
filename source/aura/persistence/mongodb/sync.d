@@ -1,9 +1,13 @@
-﻿module aura.persistence.core.sync;
+﻿module aura.persistence.mongodb.sync;
 
-import aura.persistence.core.base;
-import aura.persistence.mongodb;
+import aura.persistence.core;
+import aura.persistence.mongodb.model;
+
+import vibe.data.bson;
 
 import std.typecons;
+import std.datetime;
+
 public import std.digest.sha;
 
 /* This set of structs could certainly use some better methods of updating other than calling save
@@ -66,7 +70,7 @@ struct SyncMeta {
 			ensureService(serviceName);
 		}
 	}
-	
+
 	/// Clears the sync data for the specified serviceName
 	void clearService(string serviceName) {
 		if (serviceExists(serviceName)) services.remove(serviceName);
@@ -78,7 +82,7 @@ struct SyncMeta {
 			clearService(serviceName);
 		}
 	}
-	
+
 	/// Returns true if the specified service does not match the given syncHash
 	/// Returns false if the service doesn't exist or is up to date
 	bool serviceNeedsSync(string serviceName, SyncHash syncHash) {
@@ -88,29 +92,39 @@ struct SyncMeta {
 	}
 }
 
-struct ModelSyncMeta(M) {
+struct ModelSyncMeta(A, M) {
 	private {
 		@ignore const M _model;
+		@ignore A _adapter;
 	}
 	
 	SyncMeta _syncMeta;
 	
-	this(const M model, const string[] requiredServices ...) {
+	this(A adapter, const M model, const string[] requiredServices ...) {
 		_model = model;
+		_adapter = adapter;
 		
 		assert(model._id.valid, "You can only use SyncMeta on a model with an Id");
 		
-		auto query = ["modelType": Bson(M.stringof), "modelId": Bson(model._id)].serializeToBson;
-		_syncMeta.mongoAdapter.find!SyncMeta(query, (result) {
-			_syncMeta.deserializeBson(result);
-		}, 1);
-		
+		load();
+
+		_syncMeta.ensureServices(requiredServices);
+	}
+
+	void load() {
+		import vibe.core.log;
+		import colorize;
+		import aura.data.json;
+
+		auto query = ["modelType": Bson(M.stringof), "modelId": Bson(_model._id)].serializeToBson;
+		_adapter.query!SyncMeta(query, (result) {
+				deserializeBson(_syncMeta, result);
+			}, 1);
+
 		if (!_syncMeta._id.valid) {
-			_syncMeta.modelId = model._id;
+			_syncMeta.modelId = _model._id;
 			_syncMeta.modelType = M.stringof;
 		}
-		
-		_syncMeta.ensureServices(requiredServices);
 	}
 	
 	ref SyncServiceMeta opIndex(string serviceName) {
@@ -119,7 +133,7 @@ struct ModelSyncMeta(M) {
 	
 	bool save() {
 		_syncMeta._syncHash = _model.syncHash;
-		return _syncMeta.save();
+		return _adapter.save(_syncMeta);
 	}
 	
 	@property bool changed() const {
@@ -150,6 +164,10 @@ struct ModelSyncMeta(M) {
 	void ensureService(string serviceName) {
 		_syncMeta.ensureService(serviceName);
 	}
+
+	void clearServices(const string[] services ...) {
+		_syncMeta.clearServices(services);
+	}
 	
 	void clearServices(const string[] services ...) {
 		_syncMeta.clearServices(services);
@@ -167,19 +185,16 @@ struct ModelSyncMeta(M) {
 	
 }
 
-/// Helper function to initialize a ModelSyncMeta!M struct
-ModelSyncMeta!M modelSync(M)(const M model, const string[] requiredServices ...) {
-	return ModelSyncMeta!M(model, requiredServices);
-}
-
 version (unittest) {
-	import std.datetime;
-	
+	import aura.persistence.mongodb;
+
+
 	import vibe.d;
 	import std.digest.sha;
 	import std.datetime;
 	import std.stdio;
-	
+	import std.datetime;
+
 	class UserModel {
 		string name;
 		int age;
@@ -201,34 +216,41 @@ version (unittest) {
 		}
 		
 	}
-	
+
+	class UTSyncAdapter : MongoAdapter!(SyncMeta, UserModel) {
+	}
+
+	auto utSyncMeta(M, A)(A adapter, const M model, const string[] requiredServices ...) {
+		return ModelSyncMeta!(A, M)(adapter, model, requiredServices);
+	}
 }
 
 unittest {
+
 	import std.exception;
-	
-	auto mongoAdapter = new MongoAdapter("mongodb://localhost/", "geo_server", "unittest");
-	
+
+	auto mongoAdapter = new UTSyncAdapter;
+	mongoAdapter.url = "mongodb://mongodb";
+	mongoAdapter.databaseName = format("aura_unittest");
+
 	mongoAdapter.dropCollection("sync_meta");
-	mongoAdapter.registerModel!SyncMeta(ModelMeta("sync_meta"));
 	mongoAdapter.ensureIndex!SyncMeta(["modelType": 1, "modelId": 1], IndexFlags.Unique);
 	mongoAdapter.dropCollection("user_models");
-	mongoAdapter.registerModel!UserModel(ModelMeta("user_models"));
-	
+
 	auto u = new UserModel;
 	u.name = "David";
 	u.age = 35;
 	
 	// We cannot retrieve a ModelSyncMeta struct for a model that has no Id
-	assertThrown!AssertError(modelSync(u));
-	
+	assertThrown!AssertError(utSyncMeta(mongoAdapter, u));
+
 	// Saving the user creates the Id
-	u.save;
+	mongoAdapter.save(u);
 	
 	// We should now be able to get the ModelSyncMeta with a call to modelSync with the model
 	// also we make sure the services we require exist
-	auto sync = modelSync(u, "webService1", "webService2");
-	
+	auto sync = utSyncMeta(mongoAdapter, u, "webService1", "webService2");
+
 	assert(!sync.serviceNeedsSync("undefinedService"));
 	
 	// Both of the new services need syncing
@@ -254,10 +276,9 @@ unittest {
 	sync.save;
 	
 	// If we retrieve this from the database, assert that it's getting the saved syncHash values
-	auto retrievedSync = modelSync(u);
+	auto retrievedSync = utSyncMeta(mongoAdapter, u);
 	u.age = 37;
 	assert(sync["webService1"].syncHash.length);
-	
 }
 
 SyncHash syncHash(M, string hashFunction = "sha1Of")(const M model) {
