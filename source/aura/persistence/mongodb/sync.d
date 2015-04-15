@@ -168,10 +168,6 @@ struct ModelSyncMeta(A, M) {
 	void clearServices(const string[] services ...) {
 		_syncMeta.clearServices(services);
 	}
-	
-	void clearServices(const string[] services ...) {
-		_syncMeta.clearServices(services);
-	}
 
 	void clearService(string serviceName) {
 		_syncMeta.clearService(serviceName);

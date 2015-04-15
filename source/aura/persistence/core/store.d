@@ -56,7 +56,7 @@ class PersistenceStore(A ...) {
 	}
 
 	// Returns a lazy initialized adapter at the given index, cast into A. 
-	static @property A adapter(A)() {
+	static A adapter(A)() {
 		auto index = staticIndexOf!(A, AdapterTypes);
 		auto a = _adapters[index];
 		if (a) return cast(A)a;
