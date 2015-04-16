@@ -1,10 +1,3 @@
-﻿module aura.graph.mongodb.package;
+﻿module aura.graph.mongodb;
 
-class package
-{
-	this()
-	{
-		// Constructor code
-	}
-}
-
+public import aura.graph.mongodb.adapter;

@@ -1,37 +1,55 @@
-﻿module aura.persist.core.adapter;
+﻿module aura.graph.core.adapter;
 
-import aura.persist.core.model;
+import aura.graph.core.model;
 import vibe.data.bson;
 
-interface PersistAdapterInterface {
-	string containerName(string modelType) const;
-	void ensureId(PersistModelInterface model) const;
-	bool save(PersistModelInterface model) const;
+import std.string;
+import std.typetuple;
+
+interface GraphAdapterInterface {
+
 }
 
-class PersistAdapter : PersistAdapterInterface {
-	override string containerName(string modelType) const {
-		import aura.util.string_transforms;
+class GraphAdapter(M ...) : GraphAdapterInterface {
+	alias ModelTypes = TypeTuple!M;
+
+	template modelIsRegistered(M) {
+		enum modelIsRegistered = staticIndexOf!(M, ModelTypes) != -1;
+	}
+	
+	struct ContainerMeta {
+		string name;
+	}
+
+	@property ref string databaseName() { return _databaseName; }
+
+	void ensureId(GraphStateInterface model) {
+		if (!model.graphState.validId) model.graphState.id = BsonObjectID.generate.toString;
+	}
+
+	@property ref ContainerMeta containerMeta(M : GraphStateInterface)() {
+		alias index = staticIndexOf!(M, ModelTypes);
+		static assert(index != -1, "Attempted to look up the container of a model that is not part of an adapter: " ~ M.stringof);
+		return _containerMeta[index];
+	}
+
+	@property string containerName(M)() {
 		import aura.util.inflections.en;
+		import aura.util.string_transforms;
 
-		return modelType.snakeCase.pluralize;
+		auto meta = containerMeta!M;
+		if (!meta.name) {
+			meta.name = (M.stringof).snakeCase.pluralize;
+		}
+		return meta.name;
+	}
+	
+	@property void containerName(M)(string name) {
+		auto meta = containerMeta!M;
+		meta.name = name;
 	}
 
-	override void ensureId(PersistModelInterface model) const {
-		if (!model.persistState.validId) model.persistState.id = BsonObjectID.generate.toString;
-	}
-
-	override bool save(PersistModelInterface model) const {
-		return false;
-	}
-}
-
-
-unittest {
-	PersistModel model = new PersistModel;
-	PersistAdapter adapter = new PersistAdapter;
-
-	assert(!model.persistState.validId);
-	adapter.ensureId(model);
-	assert(model.persistState.validId);
+protected:
+	string _databaseName;
+	ContainerMeta[ModelTypes.length] _containerMeta;
 }

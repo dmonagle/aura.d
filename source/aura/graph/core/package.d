@@ -1,6 +1,7 @@
-﻿module aura.persist.core;
+﻿module aura.graph.core;
 
-public import aura.persist.core.model;
-public import aura.persist.core.model_store;
-public import aura.persist.core.graph;
-public import aura.persist.core.adapter;
+public import aura.graph.core.model;
+public import aura.graph.core.embedded;
+public import aura.graph.core.model_store;
+public import aura.graph.core.graph;
+public import aura.graph.core.adapter;

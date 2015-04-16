@@ -1,15 +1,16 @@
-﻿module aura.persist.core.model;
+﻿module aura.graph.core.model;
 
-import aura.persist.core.graph;
+import aura.graph.core.graph;
 import vibe.data.serialization;
+public import vibe.data.serialization;
 
-alias PersistId = string;
+alias GraphId = string;
 
 /*
  * Example: If the state is both dirty and deleted, then it is pending deletion
 */
-struct PersistState {
-	PersistId id;
+struct GraphState {
+	GraphId id;
 
 	bool persisted = false;
 	bool dirty = false;
@@ -18,11 +19,19 @@ struct PersistState {
 	@property bool validId() const {
 		return id.length ? true : false;
 	}
+
+	@property bool isNew() const {
+		return !persisted && !deleted;
+	}
+
+	@property bool needsSync() const {
+		return isNew || dirty;
+	}
 }
 
 // Adds a property to a class that will return the class name at runtime. Works on base classes to return the child class type
-mixin template PersistTypeProperty() {
-	@ignore @property string persistType() const {
+mixin template GraphTypeProperty() {
+	@ignore @property string graphType() const {
 		import std.string;
 		import std.regex;
 		
@@ -37,45 +46,85 @@ mixin template PersistTypeProperty() {
 	}
 }
 
-interface PersistModelInterface {
+interface GraphStateInterface {
 	/// Returns the current state of the model
-	@property PersistState persistState() const;
-	@property ref PersistState persistState();
-	@property GraphInterface graphInterface();
+	@property ref GraphState graphState();
+	@property GraphState graphState() const;
+	@property string graphType() const;
 
-	@property string persistType() const;
 	final @property bool isNew() const {
-		return !persistState.persisted;
+		return graphState.isNew;
 	}
 }
 
-class PersistModel : PersistModelInterface {
-	mixin PersistTypeProperty;
 
-	override @property PersistState persistState() const {
-		return _persistState;
+interface GraphModelInterface(GraphType) : GraphStateInterface {
+	alias ModelInterface = GraphModelInterface!GraphType;
+
+	@property ref GraphType graphInstance();
+	@property ref ModelInterface graphParent();
+
+	final @property bool validGraphId() const {
+		return graphState.validId;
+	}
+	
+	final @property bool graphNeedsSync() const {
+		return graphState.needsSync;
 	}
 
-	override @property ref PersistState persistState() {
-		return _persistState;
+	void graphTouch();
+	void graphUntouch();
+	void graphDelete();
+	void graphUndelete();
+}
+
+class GraphModel(GraphType) : GraphModelInterface!GraphType {
+	alias ModelInterface = GraphModelInterface!GraphType;
+
+	mixin GraphTypeProperty;
+
+	override @ignore @property GraphState graphState() const {
+		return _graphState;
 	}
 
-	override @property GraphInterface graphInterface() {
+	override @property ref GraphState graphState() {
+		return _graphState;
+	}
+
+	override @ignore @property ref GraphType graphInstance() {
 		return _graph;
 	}
 
-private:
-	PersistState _persistState;
-	GraphInterface _graph;
-}
+	override @ignore @property ref ModelInterface graphParent() {
+		return _graphParent;
+	}
 
-unittest {
-	PersistModel model = new PersistModel;
-	assert(PersistModel.stringof == model.persistType);
-	assert(model.isNew);
-	assert(!model.persistState.persisted);
-	model.persistState.persisted = true;
-	assert(!model.isNew);
-	assert(model.persistState.persisted);
-	assert(model.persistType == "PersistModel");
+
+	// Marks the model to be saved by Graph
+	override void graphTouch() {
+		graphState.dirty = true;
+	}
+	
+	// Marks the model to be deleted by Graph
+	override void graphDelete() {
+		graphState.deleted = true;
+		graphState.dirty = true;
+	}
+	
+	// Removes the save flag from the model
+	override void graphUntouch() {
+		graphState.dirty = false;
+	}
+	
+	// Removes the delete flag from the model
+	override void graphUndelete() {
+		graphState.deleted = false;
+		graphState.dirty = true;
+	}
+
+private:
+	GraphState _graphState;
+
+	GraphType _graph;
+	ModelInterface _graphParent;
 }
