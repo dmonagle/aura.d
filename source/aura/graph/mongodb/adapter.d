@@ -164,7 +164,6 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 
 	override void ensureId(GraphStateInterface model) {
 		if (!model.graphState.validId) model.graphState.id = BsonObjectID.generate.toString;
-		// If we are going to ensure embeddedIds mabye we do it here?
 	}
 
 private:

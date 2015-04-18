@@ -1,16 +1,17 @@
 ﻿module aura.graph.tests.integration;
 
 
-import std.typetuple;
-import vibe.core.log;
-
-import std.algorithm;
-
 version (unittest) {
+	import std.typetuple;
+	import vibe.core.log;
+	
+	import std.algorithm;
+	
 	import aura.graph.core;
 	import aura.graph.mongodb;
+	import aura.graph.elasticsearch;
 
-	class Person : MyGraph.Model {
+	class Person : AppGraph.Model {
 		string firstName;
 		string surname;
 		int age;
@@ -18,50 +19,66 @@ version (unittest) {
 		@graphEmbedded Employment[] employments;
 	}
 
-	class Employment : MyGraph.Model {
+	class Employment : AppGraph.Model {
 		string role;
 		string companyReference;
 	}
 
-	class Company : MyGraph.Model {
+	class Company : AppGraph.Model {
 		string name;
 		string reference;
 	}
 
 	alias GraphModels = TypeTuple!(Company, Person);
 
-	class MyGraph : Graph!(MyAdapter) {
+	class AppGraph : Graph!(AppMongoAdapter, AppEsAdapter) {
+		alias mongoAdapter = adapter!AppMongoAdapter;
+		alias esAdapter = adapter!AppEsAdapter;
+
+		static this() {
+			mongoAdapter.url = "mongodb://mongodb";
+			mongoAdapter.databaseName = "aura_graph_unittest";
+			
+			esAdapter.hosts = ["http://elasticsearch:9200"];
+			esAdapter.databaseName = "aura_graph_unittest";
+		}
+
 		this() {
 			addIndex!(Company, "reference");
 		}
 	}
 	
 	
-	class MyAdapter : GraphMongoAdapter!GraphModels {
+	class AppMongoAdapter : GraphMongoAdapter!GraphModels {
 		this() {
 
 		}
 	}
-	
-	MyGraph createGraph() {
-		MyGraph graph = new MyGraph;
-		alias mongoAdapter = graph.adapter!MyAdapter;
-		
-		mongoAdapter.url = "mongodb://mongodb";
-		mongoAdapter.databaseName = "aura_graph_unittest";
+
+	class AppEsAdapter : GraphEsAdapter!Person {
+		this() {
+			
+		}
+	}
+
+
+	AppGraph createGraph() {
+		AppGraph graph = new AppGraph;
 
 		return graph;
 	}
 
-	void dropUnittestCollections(MyGraph graph) {
-		alias mongoAdapter = graph.adapter!MyAdapter;
+	void dropUnittestCollections(AppGraph graph) {
+		alias mongoAdapter = graph.adapter!AppMongoAdapter;
+		alias esAdapter = graph.adapter!AppEsAdapter;
+
 		mongoAdapter.dropCollection!Company;
 		mongoAdapter.dropCollection!Person;
 	}
 }
 
 unittest {
-	MyGraph graph = createGraph;
+	AppGraph graph = createGraph;
 	graph.dropUnittestCollections;
 
 	assert(graph.adapterFor!Company, "The graph should return a valid adapter");
@@ -80,7 +97,6 @@ unittest {
 	assert(graph.needsSync, "The graph should need sycning");
 	assert(graph.unsyncedCount == 1, "The graph unsynced count should be 1");
 
-
 	graph.sync();
 
 	assert(!graph.needsSync, "The graph should not need sycning");
@@ -98,7 +114,7 @@ unittest {
 }
 
 unittest {
-	MyGraph graph = createGraph;
+	AppGraph graph = createGraph;
 	graph.dropUnittestCollections;
 
 	auto company = new Company;
@@ -167,7 +183,7 @@ unittest {
 	graph.sync;
 
 	auto models = graph.query!Person((graph) {
-			alias a = graph.adapter!MyAdapter;
+			alias a = graph.adapter!AppMongoAdapter;
 			auto results = a.query!Person(Bson.emptyObject);
 			logDebugV("Number of results in query: %s", results.length);
 			return results;
