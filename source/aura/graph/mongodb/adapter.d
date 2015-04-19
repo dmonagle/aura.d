@@ -11,6 +11,37 @@ import vibe.core.log;
 import std.typecons;
 
 class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
+	static Bson serialize(M : GraphStateInterface)(const M model) {
+		auto bsonModel = model.serializeToBson;
+		if (model.graphState.validId) bsonModel["_id"] = BsonObjectID.fromString(model.graphState.id);
+		
+		return bsonModel;
+	}
+	
+	static M deserialize(M : GraphStateInterface)(Bson bsonModel) {
+		M model;
+		model.deserializeBson(bsonModel);
+		BsonObjectID modelId;
+		modelId.deserializeBson(bsonModel["_id"]);
+		model.graphState.id = modelId.to!string;
+		return model;
+	}
+	
+	/// Iterates over a cursor and calls the given delegate with the deserialized model type
+	static void eachResult(ModelType, C)(C cursor, void delegate(ModelType) resultDelegate) {
+		while (!cursor.empty) {
+			ModelType model;
+			auto bsonModel = cursor.front;
+			model = deserialize!ModelType(bsonModel);
+			resultDelegate(model);
+			cursor.popFront;
+		}
+	}
+	
+	override void ensureId(GraphStateInterface model) {
+		if (!model.graphState.validId) model.graphState.id = BsonObjectID.generate.toString;
+	}
+	
 	/// Returns true if the MongoClient is connected
 	@property bool connected() const { return _connected; }
 	
@@ -72,20 +103,15 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 		return queryCursor!ModelType(Bson.emptyObject);
 	}
 
-	static Bson serialize(M : GraphStateInterface)(const M model) {
-		auto bsonModel = model.serializeToBson;
-		if (model.graphState.validId) bsonModel["_id"] = BsonObjectID.fromString(model.graphState.id);
+	/// Deserializes all results of a cursor to the given model
+	M[] deserializeCursor(M, C)(C cursor) {
+		M[] results;
 		
-		return bsonModel;
-	}
-	
-	static M deserialize(M : GraphStateInterface)(Bson bsonModel) {
-		M model;
-		model.deserializeBson(bsonModel);
-		BsonObjectID modelId;
-		modelId.deserializeBson(bsonModel["_id"]);
-		model.graphState.id = modelId.to!string;
-		return model;
+		eachResult!M(cursor, (model) {
+				results ~= model;
+			});
+		
+		return results;
 	}
 	
 	/// Removes the model from the database
@@ -128,42 +154,43 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 		auto cursor = queryCursor!M(query);
 		if (limit) cursor.limit = limit;
 
-		while (!cursor.empty) {
-			M model;
-			auto bsonModel = cursor.front;
-			model = deserialize!M(bsonModel);
-			results ~= model;
-			cursor.popFront;
-		}
-
-		return results;
+		return deserializeCursor!M(cursor);
 	}
 
 	M[] query(M)(uint limit = 0) {
 		return query!M(Bson.emptyObject, limit);
 	}
 
-	M find(M : GraphStateInterface, V)(string key, V value) {
-		M model;
+	/// Returns all of the models that have the key matchine any of the values
+	M[] findMulti(M : GraphStateInterface, V)(string key, V[] values, limit=0) {
+		auto cursor = queryCursor!M([key: ["$in": ids]]);
+		if (limit) cursor.limit = limit;
 
+		return deserializeCursor!M(cursor);
+	}
+
+	M[] findMany(M : GraphStateInterface, V)(string key, V value, uint limit=0) {
 		auto cursor = queryCursor!M([key: value]);
-		cursor.limit = 1;
+		if (limit) cursor.limit = limit;
+		auto models = deserializeCursor!M(cursor);
 
-		if (!cursor.empty) {
-			auto bsonModel = cursor.front;
-			model = deserialize!M(bsonModel);
-		}
-
-		return model;
+		return models;
 	}
 
+	M find(M : GraphStateInterface, V)(string key, V value) {
+		if (key == "") key = "_id";
+		auto results = findMany!M(key, value, 1);
+		if (results.length) return results[0];
+		return null;
+	}
+
+
+	M find(M : GraphStateInterface)(BsonObjectID id) {
+		return find!M("_id", id);
+	}
+	
 	M find(M : GraphStateInterface)(string id) {
-		auto bsonId = BsonObjectID.fromString(id);
-		return find!M("_id", bsonId);
-	}
-
-	override void ensureId(GraphStateInterface model) {
-		if (!model.graphState.validId) model.graphState.id = BsonObjectID.generate.toString;
+		return find!M(BsonObjectID.fromString(id));
 	}
 
 private:

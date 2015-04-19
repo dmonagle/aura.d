@@ -111,6 +111,8 @@ unittest {
 	graph.sync();
 	auto nothing = graph.find!Company(company.graphState.id);
 	assert(!nothing, "The delete record should not be returned");
+
+	setLogLevel(LogLevel.debugV);
 }
 
 unittest {
@@ -159,8 +161,8 @@ unittest {
 	assert(loadedPerson, "The person should have been loaded from the database");
 	auto firstEmployment = loadedPerson.employments[0];
 	auto companyRef = firstEmployment.companyReference;
-	auto company2 = graph2.find!(Company, "reference")(companyRef);
-	auto company3 = graph2.find!(Company, "reference")(companyRef);
+	auto company2 = graph2.find!Company("reference", companyRef);
+	auto company3 = graph2.find!Company("reference", companyRef);
 	assert(company2 == company3);
 	assert(cast(Person)firstEmployment.graphParent == loadedPerson);
 }
@@ -179,12 +181,11 @@ unittest {
 	employment.companyReference = "MoM";
 	employment.role = "Deputy Head";
 	person.employments ~= employment;
-	graph.inject(person);
-	graph.sync;
+	assert(graph.sync(person));
 
 	auto models = graph.query!Person((graph) {
 			alias a = graph.adapter!AppMongoAdapter;
-			auto results = a.query!Person(Bson.emptyObject);
+			auto results = a.query!Person();
 			logDebugV("Number of results in query: %s", results.length);
 			return results;
 		});

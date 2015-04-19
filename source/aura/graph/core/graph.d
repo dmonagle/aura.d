@@ -12,11 +12,13 @@ import std.traits;
 import std.algorithm;
 
 class Graph(A ...) {
+	alias GraphType = Graph!A;
+
 	alias AdapterTypes = TypeTuple!A;
 	alias ModelTypes = NoDuplicates!(staticMap!(adapterModels, AdapterTypes));
 
-	alias ModelInterface = GraphModelInterface!(Graph!(A));
-	alias Model = GraphModel!(Graph!A);
+	alias ModelInterface = GraphModelInterface!GraphType;
+	alias Model = GraphModel!GraphType;
 
 	alias AdapterLookupDelegate = ModelInterface delegate(string modelType, string attribute, string value);
 
@@ -85,6 +87,10 @@ class Graph(A ...) {
 		modelStore!M.inject(model);
 	}
 
+	void inject(M : ModelInterface)(M[] models) {
+		foreach(model; models) inject(model);
+	}
+
 	void clear() {
 		foreach(store; _modelStores) {
 			if (store) {
@@ -118,7 +124,7 @@ class Graph(A ...) {
 		return false;
 	}
 
-	M[] query(M : ModelInterface)(M[] delegate(Graph!A) queryDelegate) {
+	M[] query(M : ModelInterface)(M[] delegate(GraphType) queryDelegate) {
 		auto models = queryDelegate(this);
 
 		M[] results;
@@ -140,24 +146,47 @@ class Graph(A ...) {
 		return results;
 	}
 
-	M find(M : ModelInterface, string key = "", V)(V id) {
-		static if (is(V == string)) {
-			string idString = id;
+	/// Calls findMany against the first matching adapter for the model. 
+	/// This is effectively a shortcut method for when there is no need to store the find results
+	/// in the graph.
+	static M[] _findMany(M : ModelInterface, V)(string key, V value, uint limit = 0) {
+		M[] models;
+
+		if (auto adapter = adapterFor!M) {
+			models = adapter.findMany!M(key, value);
 		}
-		else {
-			string idString = id.to!string;
+		return models;
+	}
+
+	/// Calls find against the first matching adapter for the model. 
+	/// This is effectively a shortcut method for when there is no need to store a find result
+	/// in the graph.
+	static M _find(M : ModelInterface, V)(string key, V value) {
+		M model;
+
+		if (auto adapter = adapterFor!M) {
+			if (key == "") 
+				model = adapter.find!M(value);
+			else
+				model = adapter.find!M(key, value);
 		}
 
+		return model;
+	}
+
+	static M _find(M : ModelInterface, V)(V id) {
+		return _find!M("", id);
+	}
+
+	/// Find given key value pair in the graph or initiate a search
+	M find(M : ModelInterface, V)(string key, V id) {
+		auto idString = id.to!string;
 		auto model = modelStore!M.get!M(key, idString);
 
 		// If the model wasn't in the store, we can try the adapter
 		if (!model) {
 			if (auto adapter = adapterFor!M) {
-				static if (key == "")
-					model = adapter.find!M(idString);
-				else
-					model = adapter.find!M(key, idString);
-
+				model = GraphType._find!M(key, id);
 				if (model) inject(model);
 			}
 			else {
@@ -168,15 +197,22 @@ class Graph(A ...) {
 		return model;
 	}
 
+	M find(M : ModelInterface, V)(V id) {
+		return find!M("", id);
+	}
+
 	bool sync(M)(M model) {
 		import std.stdio;
 		import colorize;
 
 		bool result = true;
 
+		// Inject this model if it doesn't have a valid graph Id
+		if (!model.graphState.validId) inject(model);
+
 		if (model.graphState.deleted) {
-			logDebugV("Store is going to delete %s: %s".color(fg.light_red), M.stringof, model.graphState.id);
-			eachAdapterFor!(Graph!A, M, (a) { if (!a.remove(model)) result = false;} );
+			logDebugV("Graph is going to delete %s: %s".color(fg.light_red), M.stringof, model.graphState.id);
+			eachAdapterFor!(GraphType, M, (a) { if (!a.remove(model)) result = false;} );
 
 			if (result) {
 				modelStore!M.remove(model);
@@ -185,8 +221,8 @@ class Graph(A ...) {
 			}
 		}
 		else {
-			logDebugV("Store is going to save %s: %s".color(fg.light_green), M.stringof, model.graphState.id);
-			eachAdapterFor!(Graph!A, M, (a) { if (!a.save(model)) result = false;} );
+			logDebugV("Graph is going to save %s: %s".color(fg.light_green), M.stringof, model.graphState.id);
+			eachAdapterFor!(GraphType, M, (a) { if (!a.save(model)) result = false;} );
 
 			if (result) {
 				model.graphState.dirty = false;
