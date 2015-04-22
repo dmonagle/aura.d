@@ -1,3 +1,0 @@
-[submodule "vendor/dyaml"]
-	path = vendor/dyaml
-	url = https://github.com/MaksimZh/D-YAML.git

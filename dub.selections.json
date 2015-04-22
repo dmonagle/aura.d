@@ -9,7 +9,7 @@
 		"openssl": "1.1.4+1.0.1g",
 		"libev": "5.0.0+4.04",
 		"libasync": "0.7.1",
-		"dyaml": "0.5.0",
+		"dyaml": "~master",
 		"tinyendian": "0.1.1"
 	}
 }
