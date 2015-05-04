@@ -53,9 +53,7 @@ class GraphModelStore {
 	}
 	
 	void clear() {
-		if (empty) return;
-		foreach(id, model; _store[""])
-			remove(model);
+		_store = (GraphStateInterface[string][string]).init;
 	}
 	
 	void remove(GraphStateInterface model) {
@@ -68,7 +66,7 @@ class GraphModelStore {
 			_store[key].remove(meta.getKey(model));
 		}
 	}
-	
+
 	GraphStateInterface[string] opIndex(string key) {
 		return _store[key];
 	}
