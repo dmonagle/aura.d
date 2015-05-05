@@ -178,6 +178,12 @@ class Graph(A ...) {
 		return _find!M("", id);
 	}
 
+	static bool _remove(M : ModelInterface)(M model) {
+		bool result = true;
+		eachAdapterFor!(GraphType, M, (a) { if (!a.remove(model)) result = false;} );
+		return result;
+	}
+
 	/// Find given key value pair in the graph or initiate a search
 	M find(M : ModelInterface, V)(string key, V id) {
 		auto idString = id.to!string;
@@ -212,7 +218,7 @@ class Graph(A ...) {
 
 		if (model.graphState.deleted) {
 			logDebugV("Graph is going to delete %s: %s".color(fg.light_red), M.stringof, model.graphState.id);
-			eachAdapterFor!(GraphType, M, (a) { if (!a.remove(model)) result = false;} );
+			result = _remove(model);
 
 			if (result) {
 				modelStore!M.remove(model);
