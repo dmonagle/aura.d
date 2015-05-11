@@ -68,6 +68,10 @@ interface GraphModelInterface(GraphType) : GraphStateInterface {
 		return graphState.validId;
 	}
 	
+	final @property string graphId() const {
+		return graphState.id;
+	}
+	
 	final @property bool graphNeedsSync() const {
 		return graphState.needsSync;
 	}

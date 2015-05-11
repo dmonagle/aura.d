@@ -1,4 +1,4 @@
-﻿module aura.graph.core.graph;
+module aura.graph.core.graph;
 
 import aura.graph.core.model;
 import aura.graph.core.model_store;
@@ -207,31 +207,36 @@ class Graph(A ...) {
 		return find!M("", id);
 	}
 
-	bool sync(M)(M model) {
-		import std.stdio;
+	static bool _sync(M)(M model) {
 		import colorize;
 
 		bool result = true;
 
-		// Inject this model if it doesn't have a valid graph Id
-		if (!model.graphState.validId) inject(model);
-
 		if (model.graphState.deleted) {
 			logDebugV("Graph is going to delete %s: %s".color(fg.light_red), M.stringof, model.graphState.id);
-			result = _remove(model);
-
-			if (result) {
-				modelStore!M.remove(model);
-				model.graphState.dirty = false;
-				model.graphState.persisted = false;
-			}
+			eachAdapterFor!(GraphType, M, (a) { if (!a.remove(model)) result = false;} );
 		}
 		else {
 			logDebugV("Graph is going to save %s: %s".color(fg.light_green), M.stringof, model.graphState.id);
 			eachAdapterFor!(GraphType, M, (a) { if (!a.save(model)) result = false;} );
+		}
 
-			if (result) {
-				model.graphState.dirty = false;
+		return result;
+	}
+
+	bool sync(M)(M model) {
+		// Inject this model if it doesn't have a valid graph Id
+		if (!model.graphState.validId) inject(model);
+
+		bool result = _sync(model);
+
+		if (result) {
+			model.graphState.dirty = false;
+			if (model.graphState.deleted) {
+				modelStore!M.remove(model);
+				model.graphState.persisted = false;
+			}
+			else {
 				model.graphState.persisted = true;
 			}
 		}
