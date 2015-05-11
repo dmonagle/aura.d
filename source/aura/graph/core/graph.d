@@ -215,10 +215,16 @@ class Graph(A ...) {
 		if (model.graphState.deleted) {
 			logDebugV("Graph is going to delete %s: %s".color(fg.light_red), M.stringof, model.graphState.id);
 			eachAdapterFor!(GraphType, M, (a) { if (!a.remove(model)) result = false;} );
+			if (result) model.graphState.persisted = false;
 		}
 		else {
 			logDebugV("Graph is going to save %s: %s".color(fg.light_green), M.stringof, model.graphState.id);
 			eachAdapterFor!(GraphType, M, (a) { if (!a.save(model)) result = false;} );
+			if (result) model.graphState.persisted = true;
+		}
+
+		if (result) {
+			model.graphState.dirty = false;
 		}
 
 		return result;
@@ -231,13 +237,8 @@ class Graph(A ...) {
 		bool result = _sync(model);
 
 		if (result) {
-			model.graphState.dirty = false;
 			if (model.graphState.deleted) {
 				modelStore!M.remove(model);
-				model.graphState.persisted = false;
-			}
-			else {
-				model.graphState.persisted = true;
 			}
 		}
 
