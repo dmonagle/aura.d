@@ -161,6 +161,13 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 		return query!M(Bson.emptyObject, limit);
 	}
 
+	/// Runs the given query on the adapter and calls the delegate for each deserialized model
+	void query(M, Q)(Q query, void delegate(M) modelDelegate, uint limit = 0) {
+		auto cursor = queryCursor!M(query);
+		if (limit) cursor.limit = limit;
+		eachResult!M(cursor, modelDelegate);
+	}
+
 	/// Returns all of the models that have the key matchine any of the values
 	M[] findMulti(M : GraphStateInterface, V)(string key, V[] values, limit=0) {
 		auto cursor = queryCursor!M([key: ["$in": ids]]);
@@ -185,11 +192,11 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 	}
 
 
-	M find(M : GraphStateInterface)(BsonObjectID id) {
+	M find(M : GraphStateInterface, V)(V id) {
 		return find!M("_id", id);
 	}
 	
-	M find(M : GraphStateInterface)(string id) {
+	M find(M : GraphStateInterface, V : string)(V id) {
 		return find!M(BsonObjectID.fromString(id));
 	}
 

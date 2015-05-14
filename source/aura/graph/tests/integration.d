@@ -157,8 +157,11 @@ unittest {
 
 	auto graph2 = createGraph;
 	auto loadedPerson = graph2.find!Person(person.graphState.id);
+	assert(loadedPerson != person, "The loadedPerson should have a different instance");
+	assert(loadedPerson.graphId == person.graphId, "The loadedPerson should have the same _id");
 	assert (loadedPerson.employments[0].graphInstance == graph2, "The graphInstance of embedded items should be the same as the instance that loaded the parent");
 	assert(loadedPerson, "The person should have been loaded from the database");
+	assert(loadedPerson != person, "The loadedPerson should have a different instance");
 	auto firstEmployment = loadedPerson.employments[0];
 	auto companyRef = firstEmployment.companyReference;
 	auto company2 = graph2.find!Company("reference", companyRef);

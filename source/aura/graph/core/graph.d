@@ -56,8 +56,8 @@ class Graph(A ...) {
 		return cast(A)a;
 	}
 
-	void addIndex(M)(string key, GraphIndexKeyDelegate getKey) {
-		storeForModel!M.addIndex(key, getKey);
+	void addIndex(M)(string key, GraphModelStore.GraphIndexKeyDelegate getKey) {
+		modelStore!M.addIndex(key, getKey);
 	}
 
 	void addIndex(M : ModelInterface, string attribute)() {
@@ -124,6 +124,14 @@ class Graph(A ...) {
 		return false;
 	}
 
+	/// Runs the given query on the first matching adapter for the model, injects it into the graph and calls the delegate for each model
+	void query(M, Q)(Q query, void delegate(M) modelDelegate, uint limit = 0) {
+		_query!M(query, (model) {
+				inject(model);
+				modelDelegate(model);
+			}, limit);
+	}
+
 	M[] query(M : ModelInterface)(M[] delegate(GraphType) queryDelegate) {
 		auto models = queryDelegate(this);
 
@@ -184,6 +192,15 @@ class Graph(A ...) {
 		return result;
 	}
 
+	/// Runs the given query on the first matching adapter for the model and calls the delegate for each model
+	static void _query(M, Q)(Q query, void delegate(M) modelDelegate, uint limit = 0) {
+		if (auto adapter = adapterFor!M) {
+			adapter.query!M(query, (model) {
+					modelDelegate(model);
+				}, limit);
+		}
+	}
+
 	/// Find given key value pair in the graph or initiate a search
 	M find(M : ModelInterface, V)(string key, V id) {
 		auto idString = id.to!string;
@@ -205,6 +222,12 @@ class Graph(A ...) {
 
 	M find(M : ModelInterface, V)(V id) {
 		return find!M("", id);
+	}
+
+	M[] findMany(M : ModelInterface, V)(string key, V value, uint limit = 0) {
+		auto results = _findMany!M(key, value, limit);
+		inject(results);
+		return results;
 	}
 
 	static bool _sync(M)(M model) {
