@@ -118,10 +118,10 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 	/// Removes the model from the database
 	bool remove(M : GraphStateInterface)(M model) {
 		if (model.validGraphId) {
-			auto id = BsonObjectID.fromString(model.graphId);
+			auto id = BsonObjectID.fromString(model.graphState.id);
 			auto cName = containerName!M;
 			auto collection = getCollection(cName);
-			logDebugV("GraphMongoAdapter: Removing from collection %s: %s", cName, model.graphId);
+			logDebugV("GraphMongoAdapter: Removing from collection %s: %s", cName, model.graphState.id);
 			collection.remove(["_id": id]);
 		}
 		return true;
