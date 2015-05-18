@@ -1,3 +1,10 @@
+/**
+	An object oriented persistence graph that abstracts data from the underlying databases.
+
+	Copyright: © 2015 David Monagle
+	License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+	Authors: David Monagle
+*/
 module aura.graph.core.graph;
 
 import aura.graph.core.model;
@@ -11,6 +18,9 @@ import std.typetuple;
 import std.traits;
 import std.algorithm;
 
+/**
+
+*/
 class Graph(A ...) {
 	alias GraphType = Graph!A;
 
@@ -46,7 +56,7 @@ class Graph(A ...) {
 		alias adapterFor = adapter!(adapterTypeFor!M);
 	}
 
-	// Returns a lazy initialized adapter at the given index, cast into A. 
+	/// Returns a lazy initialized adapter at the given index, cast into A. 
 	static A adapter(A)() {
 		auto index = staticIndexOf!(A, AdapterTypes);
 		auto a = _adapters[index];
@@ -56,10 +66,12 @@ class Graph(A ...) {
 		return cast(A)a;
 	}
 
+	/// Adds a named index for the given model and key. The delegate must return a string value that will be indexed.
 	void addIndex(M)(string key, GraphModelStore.GraphIndexKeyDelegate getKey) {
 		modelStore!M.addIndex(key, getKey);
 	}
 
+	/// Adds a named index for the given model with an attribute of the same name.
 	void addIndex(M : ModelInterface, string attribute)() {
 		modelStore!M.addIndex!(M, attribute);
 	}
@@ -77,7 +89,7 @@ class Graph(A ...) {
 			})(model);
 	}
 
-	void inject(M : ModelInterface)(M model) {
+	M inject(M : ModelInterface)(M model) {
 		if (!model.graphState.validId) {
 			if (auto adapter = adapterFor!M) {
 				adapter.ensureId(model);
@@ -85,6 +97,7 @@ class Graph(A ...) {
 		}
 		ensureGraphReferences(model);
 		modelStore!M.inject(model);
+		return model;
 	}
 
 	void inject(M : ModelInterface)(M[] models) {
