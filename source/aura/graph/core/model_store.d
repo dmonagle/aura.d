@@ -41,11 +41,11 @@ class GraphModelStore {
 	
 	void inject(GraphStateInterface model) {
 		assert(model.graphState.validId, "Attempted to inject a model of type '" ~ model.graphType ~ "' into the store that does not have an Id");
-		version (unittest) { writefln("Injecting '%s'", model.graphState.id.color(fg.yellow)); }
+		//version (unittest) { writefln("Injecting '%s'", model.graphState.id.color(fg.yellow)); }
 		_store[""][model.graphState.id] = model;
 		
 		foreach (index, meta; _indexMeta) {
-			version (unittest) { writefln("Injecting '%s' into index '%s'", meta.getKey(model).color(fg.yellow), index); }
+			// version (unittest) { writefln("Injecting '%s' into index '%s'", meta.getKey(model).color(fg.yellow), index); }
 			auto key = meta.getKey(model); 
 			//assert(key.length, "Indexed value is empty when trying to index '" ~ index ~ "' for model '" ~ model.graphType ~ "'");
 			if (key.length) {
@@ -75,14 +75,14 @@ class GraphModelStore {
 	
 	GraphStateInterface retrieve(string key, string id) {
 		GraphStateInterface model;
-		version (unittest) { writefln("Getting '%s' from index '%s'", id.color(fg.light_blue), key); }
+		//version (unittest) { writefln("Getting '%s' from index '%s'", id.color(fg.light_blue), key); }
 		assert(key == "" || key in _indexMeta, "Attempted to look up unregistered key '" ~ key ~ "` in ModelStore");
 		if (key !in _store) return model; // Return if nothing has been put into the index yet
 		
 		auto modelStore = _store[key];
 		if (id in modelStore) {
-			version (unittest) { writefln("Found".color(fg.light_green)); }
-			version (unittest) { writefln("%s".color(fg.light_magenta), modelStore); }
+			//version (unittest) { writefln("Found".color(fg.light_green)); }
+			//version (unittest) { writefln("%s".color(fg.light_magenta), modelStore); }
 			model = modelStore[id];
 		}
 		return model;

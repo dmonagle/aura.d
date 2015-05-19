@@ -22,6 +22,7 @@ string defineGraphBelongsToProperty(M, string propertyName, string key, string f
 	
 	return format(`
 		@ignore @property %1$s %2$s() {
+			assert(graphInstance, "Attempted to use GraphBelongsTo property '%2$s(%1$s)' on model '" ~ graphType ~ "' without a graphInstance");
 			return graphGetBelongsTo!%1$s("%3$s", %4$s);
 		}
 	`, M.stringof, _propertyName, foreignKey, _key);
