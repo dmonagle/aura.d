@@ -20,6 +20,8 @@ version (unittest) {
 	}
 
 	class Employment : AppGraph.Model {
+		mixin GraphBelongsTo!(Company, "company", "companyReference", "reference");
+
 		string role;
 		string companyReference;
 	}
@@ -136,6 +138,9 @@ unittest {
 
 	graph.inject(person);
 	graph.inject(company);
+
+	// Test relationships
+	assert(employment.company == company, "The company property should point to the company");
 
 	assert(graph.unsyncedCount == 2);
 	assert(person.employments[0].graphInstance == graph, "The graph instance should be set on embedded objects");

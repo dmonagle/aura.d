@@ -47,8 +47,10 @@ class GraphModelStore {
 		foreach (index, meta; _indexMeta) {
 			version (unittest) { writefln("Injecting '%s' into index '%s'", meta.getKey(model).color(fg.yellow), index); }
 			auto key = meta.getKey(model); 
-			assert(key.length, "Indexed value is empty when trying to index '" ~ index ~ "' for model '" ~ model.graphType ~ "'");
-			_store[index][key] = model;
+			//assert(key.length, "Indexed value is empty when trying to index '" ~ index ~ "' for model '" ~ model.graphType ~ "'");
+			if (key.length) {
+				_store[index][key] = model;
+			}
 		}
 	}
 	

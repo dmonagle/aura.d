@@ -1,5 +1,7 @@
 ﻿module aura.graph.core.model;
 
+import aura.graph.core.relationships;
+
 import aura.graph.core.graph;
 import vibe.data.serialization;
 public import vibe.data.serialization;
@@ -124,6 +126,19 @@ class GraphModel(GraphType) : GraphModelInterface!GraphType {
 	override void graphUndelete() {
 		graphState.deleted = false;
 		graphState.dirty = true;
+	}
+
+protected:
+	M graphGetBelongsTo(M, T)(string foreignKey, T value) {
+		assert(graphInstance, "Attempted to use BelongsTo '" ~ M.stringof ~ "." ~ (foreignKey.length ? foreignKey : "id") ~ "' without a graphInstance");
+
+		M returnValue;
+		if (isNotNull(value)) returnValue = graphInstance.find!M(foreignKey, value);
+		return returnValue;
+	}
+
+	M graphGetBelongsTo(M, T)(T value) {
+		return graphGetBelongsTo!M("", value);
 	}
 
 private:

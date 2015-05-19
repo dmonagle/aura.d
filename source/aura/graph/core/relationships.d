@@ -5,31 +5,30 @@ import aura.graph.core.model;
 import aura.util.string_transforms;
 import aura.util.inflections.en;
 
-string defineGraphBelongsTo(M, string propertyName, string key, string foreignKey)() {
+public import aura.util.null_bool;
+
+string defineGraphBelongsToProperty(M, string propertyName, string key, string foreignKey)() {
 	import std.string;
-	
+
 	static if (!propertyName.length) 
-		string _propertyName = M.stringof.camelCaseLower;
+		immutable string _propertyName = M.stringof.camelCaseLower;
 	else
-		string _propertyName = propertyName;
+		immutable string _propertyName = propertyName;
 	
 	static if (!key.length)
-		string _key = _propertyName ~ "Id";
+		immutable string _key = _propertyName ~ "Id";
 	else
-		string _key = key;
+		immutable string _key = key;
 	
 	return format(`
 		@ignore @property %1$s %2$s() {
-			assert(graphInstance, "Attempted to use belongs to property '%2$s' on model '%1$s' without a graphInstance");
-			%1$s returnValue;
-			if (graphInstance) returnValue = graphInstance.find!%1$s("%4$s",%3$s);
-			return returnValue;
+			return graphGetBelongsTo!%1$s("%3$s", %4$s);
 		}
-	`, M.stringof, _propertyName,  _key, foreignKey);
+	`, M.stringof, _propertyName, foreignKey, _key);
 }
 
 mixin template GraphBelongsTo(M, string propertyName = "", string key = "", string foreignKey = "") {
-	mixin(defineGraphBelongsTo!(M, propertyName, key, foreignKey));
+	mixin(defineGraphBelongsToProperty!(M, propertyName, key, foreignKey));
 }
 
 string defineGraphOuterBelongsTo(L, M, string propertyName, string key, string foreignKey)() {
