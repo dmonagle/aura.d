@@ -5,7 +5,7 @@ import std.traits;
 
 bool isTrue(T)(T b) {
 	if (b.isNull) return false;
-	return b == true;
+	return b ? true : false;
 }
 
 bool isFalse(T)(T b) {
