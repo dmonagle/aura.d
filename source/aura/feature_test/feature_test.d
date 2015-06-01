@@ -135,19 +135,19 @@ debug (featureTest) {
 		@property ref string name() { return _name; }
 		@property ref string description() { return _description; }
 		
-		final void beforeAll(FTDelegate d) {
+		final void addBeforeAll(FTDelegate d) {
 			_beforeAllCallbacks ~= d;
 		}
 		
-		final void beforeEach(FTDelegate d) {
+		final void addBeforeEach(FTDelegate d) {
 			_beforeEachCallbacks ~= d;
 		}
 		
-		final void afterEach(FTDelegate d) {
+		final void addAfterEach(FTDelegate d) {
 			_afterEachCallbacks ~= d;
 		}
 		
-		final void afterAll(FTDelegate d) {
+		final void addAfterAll(FTDelegate d) {
 			_afterAllCallbacks ~= d;
 		}
 		
@@ -239,26 +239,33 @@ debug (featureTest) {
 		}
 		
 		void _afterEach() {
-			afterEach;
 			runCallbacks(_afterEachCallbacks);
+			afterEach;
 		}
 		
 		void _afterAll() {
-			afterAll;
 			runCallbacks(_afterAllCallbacks);
+			afterAll;
 		}
 	}
 	
-	void feature(T = FeatureTest)(string name, string description, FTImplementation implementation) {
+	void feature(T)(string name, string description, void delegate(T) implementation) {
 		auto f = new T();
 		f.name = name;
 		f.description = description;
 		implementation(f);
 		FeatureTestRunner.features ~= f;
 	}
-	
-	void feature(T = FeatureTest)(string name, FTImplementation implementation) {
+
+	void feature(T)(string name, void delegate(T) implementation) {
 		feature!T(name, "", implementation);
 	}
-	
+
+	void feature(string name, string description, void delegate(FeatureTest) implementation) {
+		feature!FeatureTest(name, description, implementation);
+	}
+
+	void feature(string name, void delegate(FeatureTest) implementation) {
+		feature!FeatureTest(name, "", implementation);
+	}
 }
