@@ -184,14 +184,13 @@ debug (featureTest) {
 				bool scenarioPass = true;
 				
 				_beforeEach;
-				FeatureTestRunner.logf("%s".color(fg.light_white, bg.init, mode.bold), scenario.name);
-				write("  ");
+				FeatureTestRunner.logfln("%s".color(fg.light_white, bg.init, mode.bold), scenario.name);
 				++FeatureTestRunner.indent;
 				try {
 					scenario.implementation();
 				}
 				catch (Throwable t) {
-					writeln("[ FAIL ]".color(fg.black, bg.light_red));
+					FeatureTestRunner.logln("[ FAIL ]".color(fg.black, bg.light_red));
 					scenarioPass = false;
 					FeatureTestRunner.incFailed;
 					FeatureTestRunner.failures ~= FeatureTestRunner.Failure(name, scenario.name, t);
@@ -202,7 +201,7 @@ debug (featureTest) {
 				}
 				
 				if (scenarioPass) {
-					writeln("[ PASS ]".color(fg.black, bg.light_green));
+					FeatureTestRunner.logln("[ PASS ]".color(fg.black, bg.light_green));
 					FeatureTestRunner.incPassed;
 				}
 				--FeatureTestRunner.indent;
