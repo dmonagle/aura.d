@@ -71,8 +71,8 @@ debug (featureTest) {
 				output ~= "All feature tests passed successfully!\n".color(fg.light_green);
 			}
 			
-			output ~= format(" Features tested: %s\n", featuresTested.to!string.color(fg.light_yellow));
-			output ~= format("Scenarios tested: %s\n", scenariosTested.to!string.color(fg.light_yellow));
+			output ~= format(" Features tested: %s\n", featuresTested.to!string.color(fg.light_cyan));
+			output ~= format("Scenarios tested: %s\n", scenariosTested.to!string.color(fg.light_cyan));
 			if (scenariosPassed) output ~= format("Scenarios passed: %s\n", scenariosPassed.to!string.color(fg.light_green));
 			if (scenariosFailed) output ~= format("Scenarios failed: %s\n", scenariosFailed.to!string.color(fg.light_red));
 			
@@ -184,6 +184,9 @@ debug (featureTest) {
 			}
 			
 			_beforeAll();
+
+			FeatureTestRunner.logln("Scenarios:".color(fg.light_cyan));
+			++FeatureTestRunner.indent; // Indent the scenarios
 			foreach(scenario; _scenarios) {
 				bool scenarioPass = true;
 				
@@ -210,6 +213,7 @@ debug (featureTest) {
 				--FeatureTestRunner.indent;
 				_afterEach;
 			}
+			--FeatureTestRunner.indent; // Unindent the scenarios
 			_afterAll;
 			--FeatureTestRunner.indent;
 			writeln();
