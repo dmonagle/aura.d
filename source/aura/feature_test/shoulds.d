@@ -20,4 +20,11 @@ debug (featureTest) {
 		}
 		throw new FeatureTestException(format("REST Exception did not occur when expecting %s(%s)", status.to!string, status), file, line);
 	}
+
+	import aura.data.json;
+	bool shouldBeJson(string type)(Json object, string file = __FILE__, typeof(__LINE__) line = __LINE__) {
+		bool function(ref const Json) check = mixin("&is" ~ type);
+		if (check(object)) return true;
+		throw new FeatureTestException(format("Should be JSON type %s but got %s", type, object.type), file, line);
+	}
 }
