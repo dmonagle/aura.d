@@ -8,7 +8,11 @@ debug (featureTest) {
 	import std.string;
 	import std.conv;
 	import std.random;
-	
+
+	class FeatureTestException : Exception {
+		this(string s, string file = __FILE__, typeof(__LINE__) line = __LINE__) { super(s, file, line); }
+	}
+
 	struct FeatureTestRunner {
 		struct Failure {
 			string feature;
@@ -195,9 +199,8 @@ debug (featureTest) {
 					FeatureTestRunner.incFailed;
 					FeatureTestRunner.failures ~= FeatureTestRunner.Failure(name, scenario.name, t);
 					
-					// Rethrow the original error if it's not an assertion
-					auto assertion = cast(AssertError)t;
-					if (!assertion) throw t;
+					// Rethrow the original error if it's not an AsserError or a FeatureTestException
+					if (!cast(AssertError)t && !cast(FeatureTestException)t) throw t;
 				}
 				
 				if (scenarioPass) {
