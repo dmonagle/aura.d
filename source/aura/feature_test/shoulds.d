@@ -3,11 +3,10 @@
 debug (featureTest) {
 	import aura.feature_test.feature_test;
 
-	import vibe.web.rest;
-	import vibe.http.server;
-
 	import std.string;
 
+	import vibe.web.rest;
+	import vibe.http.server;
 	/// Calls the given expression and returns true if it throws a RestException with the given status
 	bool shouldThrowRestException(E)(lazy E expression, HTTPStatus status, string file = __FILE__, typeof(__LINE__) line = __LINE__) {
 		try {

@@ -11,6 +11,9 @@ debug (featureTest) {
 
 	class FeatureTestException : Exception {
 		this(string s, string file = __FILE__, typeof(__LINE__) line = __LINE__) { super(s, file, line); }
+		this(string file = __FILE__, typeof(__LINE__) line = __LINE__) { pending = true; super("Pending", file, line); }
+
+		bool pending = false;
 	}
 
 	struct FeatureTestRunner {
@@ -24,6 +27,7 @@ debug (featureTest) {
 		static uint featuresTested;
 		static uint scenariosPassed;
 		static uint scenariosFailed;
+		static uint scenariosPending;
 		static FeatureTest[] features;
 		static Failure[] failures;
 		
@@ -47,11 +51,13 @@ debug (featureTest) {
 		static void incFeatures() { featuresTested += 1; }
 		static void incPassed() { scenariosPassed += 1; }
 		static void incFailed() { scenariosFailed += 1; }
-		
+		static void incPending() { scenariosPending += 1; }
+
 		static void reset() {
 			featuresTested = 0;
 			scenariosPassed = 0;
 			scenariosFailed = 0;
+			scenariosPending = 0;
 			failures = [];
 		}
 		
@@ -71,11 +77,12 @@ debug (featureTest) {
 				output ~= "All feature tests passed successfully!\n".color(fg.light_green);
 			}
 			
-			output ~= format(" Features tested: %s\n", featuresTested.to!string.color(fg.light_cyan));
-			output ~= format("Scenarios tested: %s\n", scenariosTested.to!string.color(fg.light_cyan));
-			if (scenariosPassed) output ~= format("Scenarios passed: %s\n", scenariosPassed.to!string.color(fg.light_green));
-			if (scenariosFailed) output ~= format("Scenarios failed: %s\n", scenariosFailed.to!string.color(fg.light_red));
-			
+			output ~= format("  Features tested: %s\n", featuresTested.to!string.color(fg.light_cyan));
+			output ~= format(" Scenarios tested: %s\n", scenariosTested.to!string.color(fg.light_cyan));
+			if (scenariosPassed) output ~= format(" Scenarios passed: %s\n", scenariosPassed.to!string.color(fg.light_green));
+			if (scenariosFailed) output ~= format(" Scenarios failed: %s\n", scenariosFailed.to!string.color(fg.light_red));
+			if (scenariosPending) output ~= format("Scenarios pending: %s\n", scenariosPending.to!string.color(fg.light_yellow));
+
 			return output;
 		}
 		
@@ -197,13 +204,25 @@ debug (featureTest) {
 					scenario.implementation();
 				}
 				catch (Throwable t) {
-					FeatureTestRunner.logln("[ FAIL ]".color(fg.black, bg.light_red));
+					string failMessage;
+
+					auto featureTestException = cast(FeatureTestException)t;
 					scenarioPass = false;
-					FeatureTestRunner.incFailed;
+
+					if (featureTestException && featureTestException.pending) {
+						failMessage = "[ PENDING ]".color(fg.black, bg.light_yellow);
+						FeatureTestRunner.incPending;
+					}
+					else {
+						failMessage = "[ FAIL ]".color(fg.black, bg.light_red);
+						FeatureTestRunner.incFailed;
+					}
+
+					FeatureTestRunner.logln(failMessage);
 					FeatureTestRunner.failures ~= FeatureTestRunner.Failure(name, scenario.name, t);
-					
+
 					// Rethrow the original error if it's not an AsserError or a FeatureTestException
-					if (!cast(AssertError)t && !cast(FeatureTestException)t) throw t;
+					if (!cast(AssertError)t && !featureTestException) throw t;
 				}
 				
 				if (scenarioPass) {
@@ -273,5 +292,10 @@ debug (featureTest) {
 
 	void feature(string name, void delegate(FeatureTest) implementation) {
 		feature!FeatureTest(name, "", implementation);
+	}
+
+	/// Marks a scenario as pending
+	void featureTestPending(string file = __FILE__, typeof(__LINE__) line = __LINE__) {
+		throw new FeatureTestException(file, line);
 	}
 }
