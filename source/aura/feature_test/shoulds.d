@@ -40,6 +40,7 @@ debug (featureTest) {
 	alias shouldBeFalse = should!((e) => e ? false : true, "be false");
 	alias shouldEqual = shouldValue!((e, v) => e == v, "equal");
 	alias shouldBeGreaterThan = shouldValue!((e, v) => e > v, "be greater than");
+	alias shouldBeLessThan = shouldValue!((e, v) => e < v, "be less than");
 	alias shouldNotBeEmpty = should!((e) => e.length ? true : false, "not be empty");
 
 	import aura.data.json;
