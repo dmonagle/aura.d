@@ -57,6 +57,14 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 		}
 	}
 
+	void refreshIndex(M)() {
+		auto name = indexName(containerName!M);
+		if (client.indexExists(name)) {
+			logInfo("Manually refreshing Elasticsearch Index: '%s'", name);
+			client.refreshIndex(name);
+		}
+	}
+
 	Json search(M)(string searchBody, Parameters params = Parameters()) {
 		params["body"] = searchBody;
 		params["index"] = indexName(containerName!M);
