@@ -4,10 +4,10 @@
 	"copyright": "Copyright © 2014, David Monagle",
 	"authors": ["David Monagle"],
 	"dependencies": {
-        "vibe-d": ">=0.7.22",
-		"elasticsearch-d": ">=1.0.0-alpha.2",
+        "vibe-d": ">=0.7.23",
+		"elasticsearch-d": ">=1.0.0-beta.1",
         "colorize": ">=1.0.5",
-        "dyaml": "~master",
+        "dyaml": ">=0.5.1",
 	},
 	"version": "0.1.0",
 	"license": "MIT",
