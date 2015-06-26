@@ -80,6 +80,15 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 		return response.jsonBody;
 	}
 
+	Json scroll(string scroll_id, Parameters params = Parameters()) {
+		params["scroll_id"] = scroll_id;
+		if ("scroll" !in params) params["scroll"] = "1m";
+		if ("size" !in params) params["size"] = "2000";		
+
+		auto response = client.scroll(params);
+		return response.jsonBody;
+	}
+
 	bool save(M : GraphStateInterface)(M model) {
 		static if (__traits(compiles, model.toIndexedJson)) {
 			auto json = model.toIndexedJson;
