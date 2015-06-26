@@ -1,7 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"elasticsearch-d": "1.0.0-beta.2",
+		"elasticsearch-d": "1.0.0-beta.3",
 		"memutils": "0.3.8",
 		"vibe-d": "0.7.23",
 		"libevent": "2.0.1+2.0.16",
