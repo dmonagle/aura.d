@@ -90,6 +90,7 @@ class Graph(A ...) {
 	}
 
 	M inject(M : ModelInterface)(M model) {
+		assert(model, "Passed in a null model to inject!");
 		if (!model.graphState.validId) {
 			if (auto adapter = adapterFor!M) {
 				adapter.ensureId(model);
