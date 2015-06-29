@@ -11,14 +11,29 @@ debug {
 	import std.stdio;
 }
 
+alias YamlConfig = Node;
+
+/// Sets the passed in value to the index specified by key
+void set(T)(Node n, string key, ref T value) {
+	if (n.containsKey(key))	value = n[key].as!T;
+}
+
+/// Sets the passed in array to the array at the index specified by key
+void setArray(T)(Node n, string key, ref T[] value) {
+	if (n.containsKey(key)) {
+		value = [];
+		foreach(Node node; n[key]) {
+			value ~= node.as!T;
+		}
+	}
+}
+
 Node processYamlConfigPath(string path, string environment) {
 	auto y = processYamlConfigDirectory(path, environment);
 	y = y.merge(processYamlConfigDirectory(buildPath(path, environment)));
 	
 	return y;
 }
-
-
 
 /// Processes a single directory
 Node processYamlConfigDirectory(string directory, string environment = "") {
