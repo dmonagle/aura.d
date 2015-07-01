@@ -76,10 +76,12 @@ class ContextSerializer(C, D) : ContextSerializerInterface {
 
 private: 
 	void resetFilters() {
+		if (!_context || !_data) return;
+
 		_accessAttributes = new AttributeTree;
 		_updateAttributes = new AttributeTree;
 
-		if (_context && _data) filter();
+		filter();
 	}
 
 	bool _accessWhiteList;

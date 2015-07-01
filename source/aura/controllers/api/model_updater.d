@@ -15,6 +15,13 @@ class ModelUpdater(S) {
 		_serializer = new S();
 	}
 
+	this(S.ContextType context, S.DataType data = null) {
+		_serializer = new S();
+
+		_serializer.context = context;
+		if (data) _serializer.data = data;
+	}
+
 	@property auto model() {
 		return _serializer.data;
 	}
@@ -41,7 +48,7 @@ class ModelUpdater(S) {
 
 	/// Builds a replacement of the original model with the merged changes and
 	/// if the original was in a graph, reinjects the merged version
-	S.DataType mergedModel() {
+	S.DataType mergeModel() {
 		S.DataType model;
 
 		auto merge = jsonDup(_originalJson);
@@ -56,6 +63,16 @@ class ModelUpdater(S) {
 		}
 
 		return model;
+	}
+
+	/// Returns true if the field has been changed. This will return false if the field has already been
+	/// filtered out.
+	bool fieldChanged(string field) {
+		auto updates = filteredUpdates;
+		if (!isObject(updates)) return false;
+		auto jField = updates[field];
+		if (jField.type == Json.Type.undefined) return false;
+		return jField != _originalJson[field];
 	}
 
 private:
@@ -111,7 +128,7 @@ unittest {
 	updater.context = user;
 
 	updater.updates = `{"firstName": "Rose", "job": {"title": "Shop Assistant", "level": 5 }, "salary": 50000 }`;
-	auto updatedUser = updater.mergedModel;
+	auto updatedUser = updater.mergeModel;
 
 	assert(updatedUser.job.title == "Shop Assistant");
 	assert(updatedUser.surname == "Smith");
