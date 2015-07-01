@@ -40,6 +40,7 @@ unittest {
 	j1.car = Json.emptyObject;
 	j1.car.make = "Ford";
 	j1.car.model = "Escort";
+	j1.car.seats = 4;
 	j1.scores = Json.emptyArray;
 	j1.scores ~= 8;
 	j1.scores ~= 8;
@@ -68,4 +69,5 @@ unittest {
 	assert(merged.title == "Manager");
 	assert(merged.age == 65);
 	assert(merged.car.model == "Falcon");
+	assert(merged.car.seats == 4);
 }

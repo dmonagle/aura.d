@@ -1,76 +1,139 @@
 ﻿module aura.data.json.context_serializer;
 
 import aura.data.json;
+import aura.data.attribute_tree;
 
 interface ContextSerializerInterface {
-	alias FieldList = string[];
 	Json toJson();
-	@property FieldList readOnlyFields();
-	@property FieldList redactedFields();
+	@property AttributeTree accessFilter();
+	@property AttributeTree updateFilter();
 }
 
-class ContextSerializer(ContextType, DataType) : ContextSerializerInterface{
+class ContextSerializer(C, D) : ContextSerializerInterface {
+	alias ContextType = C;
+	alias DataType = D;
+
 	void filter() {}
 	
 	@property ContextType context() { return _context; }
-	@property void context(ContextType value) { 
-		_context = value; 
-		reset(true);
-	}
 	@property DataType data() { return _data; }
 	@property void data(DataType value) { 
 		_data = value; 
-		reset(true);
+		resetFilters;
 	}
-	@property Json json() { return _json; }
-	
-	this() {}
+	@property void context(ContextType value) { 
+		_context = value; 
+		resetFilters;
+	}
+
+	this() {
+	}
 	
 	this(ContextType context, DataType data) {
+		this();
 		this.context = context;
 		this.data = data;
 	}
 	
-	@property ContextSerializerInterface.FieldList readOnlyFields() { return _readOnlyFields; }
-	@property ContextSerializerInterface.FieldList redactedFields() { return _redactedFields; }
+	@property AttributeTree updateFilter() { return _updateAttributes; }
+	@property AttributeTree accessFilter() { return _accessAttributes; }
 	
 	void process() {
-		filter();
+	}
+
+	/// Returns a copy of the given json with the access filters applied
+	Json jsonFilterAccess(Json json) {
+		if (_accessWhiteList) 
+			return json.filterIn(_accessAttributes);
+		else 
+			return json.filterOut(_accessAttributes);
 		
-		_json = data.serializeToJson;
-		
-		_json.jsonFilterOutInPlace(redactedFields);
-		auto roF = readOnlyFields;
-		if (roF.length) {
-			_json["_readOnly"] = roF.serializeToJson;
-		}
+	}
+	
+	/// Returns a copy of the given json with the update filters applied, ie: only fields updatable by the context should be included
+	Json jsonFilterUpdate(Json json) {
+		if (_updateWhiteList)
+			return json.filterIn(_updateAttributes);
+		else			
+			return json.filterOut(_updateAttributes);
 	}
 	
 	Json toJson() {
-		return _json;
+		if (!data) return Json(null);
+		auto json = data.serializeToJson;
+
+		json = jsonFilterAccess(json);
+
+		if(_updateAttributes.hasChildren) {
+			if (_updateWhiteList)
+				json["_updateable"] = _updateAttributes.leafPaths.serializeToJson;
+			else			
+				 json["_readOnly"] = _updateAttributes.leafPaths.serializeToJson;
+		}
+
+		return json;
 	}
-	
-protected:
-	void reset(bool andProcess = false) {
-		_json = Json(null);
-		_redactedFields = [];
-		_readOnlyFields = [];
-		if (andProcess && _data && _context) process;
-	}
-	
-	void addRedacted(ContextSerializerInterface.FieldList fields ...) {
-		_redactedFields ~= fields;
-	}
-	
-	void addReadOnly(ContextSerializerInterface.FieldList fields ...) {
-		_readOnlyFields ~= fields;
-	}
-	
+
 private: 
+	void resetFilters() {
+		_accessAttributes = new AttributeTree;
+		_updateAttributes = new AttributeTree;
+
+		if (_context && _data) filter();
+	}
+
+	bool _accessWhiteList;
+	bool _updateWhiteList;
+
 	ContextType _context;
 	DataType _data;
 	
-	Json _json; // Holds the json being serialized
-	ContextSerializerInterface.FieldList _readOnlyFields;
-	ContextSerializerInterface.FieldList _redactedFields;
+	AttributeTree _updateAttributes;
+	AttributeTree _accessAttributes;
 }
+
+version (unittest) {
+	struct TestJob {
+		string title;
+		@optional int level;
+	}
+	
+	class TestUser {
+		string firstName;
+		@optional string surname;
+		@optional string title;
+		int salary;
+		@optional TestJob job;
+	}
+	
+	class TestUserSerializer : ContextSerializer!(TestUser, TestUser) {
+		override void filter() {
+			accessFilter.add("salary", "job.title");
+			updateFilter.add("firstName", "surname", "job.level");
+		}
+	}
+
+	unittest {
+		import std.stdio;
+		import colorize;
+		import aura.data.json.convenience;
+		
+		auto user = new TestUser;
+		user.firstName = "John";
+		user.surname = "Smith";
+		user.job.title = "Timelord";
+		user.salary = 100000;
+
+		auto s = new TestUserSerializer;
+		s.data = user;
+		s.context = user;
+
+		auto serialized = s.toJson;
+		writeln(serialized.toPrettyString.color(fg.light_blue));
+
+		assert(isObject(serialized));
+		auto readOnly = serialized["_readOnly"];
+		assert(isArray(readOnly));
+	}
+}
+
