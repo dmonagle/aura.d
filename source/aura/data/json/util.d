@@ -63,22 +63,35 @@ void deserializeManyJson(T, mappings ...)(ref T dest, Json source) {
 	}
 }
 
+
 bool jsonPresent(Json field) {
-    if (!undefinedOrNull(field) && field.length) return true;
-    return false;
+	import std.json;
+
+	if (undefinedOrNull(field)) return false;
+    if (field.type == Json.Type.string && !field.length) return false;
+    return true;
 }
 
 unittest {
-	auto json = Json.emptyObject;
+	auto json = [
+		"thing"       : "stuff",
+		"emptyString" : "",
+		"isNull"      : null,
+	].serializeToJson;
 
-	json["thing"] = "stuff";
+	json["zero"]   = 0;
+	json["number"] = 2;
+	json["object"] = ["hey": "yo"].serializeToJson;
+
+
+	// truthy
 	assert(jsonPresent(json["thing"]));
-
-	json["emptyString"] = "";
+	assert(jsonPresent(json["number"]));
+	assert(jsonPresent(json["zero"]));
+	assert(jsonPresent(json["object"]));
+	
+	// falsey
 	assert(!jsonPresent(json["emptyString"]));
-
-	json["isNull"] = null;
 	assert(!jsonPresent(json["isNull"]));
-
 	assert(!jsonPresent(json["notDefined"]));
 }
