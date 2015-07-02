@@ -62,3 +62,23 @@ void deserializeManyJson(T, mappings ...)(ref T dest, Json source) {
 		}
 	}
 }
+
+bool jsonPresent(Json field) {
+    if (!undefinedOrNull(field) && field.length) return true;
+    return false;
+}
+
+unittest {
+	auto json = Json.emptyObject;
+
+	json["thing"] = "stuff";
+	assert(jsonPresent(json["thing"]));
+
+	json["emptyString"] = "";
+	assert(!jsonPresent(json["emptyString"]));
+
+	json["isNull"] = null;
+	assert(!jsonPresent(json["isNull"]));
+
+	assert(!jsonPresent(json["notDefined"]));
+}
