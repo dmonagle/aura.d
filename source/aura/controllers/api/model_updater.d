@@ -19,7 +19,7 @@ class ModelUpdater(S) {
 		_serializer = new S();
 
 		_serializer.context = context;
-		if (data) _serializer.data = data;
+		if (data) model = data;
 	}
 
 	@property auto model() {
@@ -49,17 +49,23 @@ class ModelUpdater(S) {
 	/// Builds a replacement of the original model with the merged changes and
 	/// if the original was in a graph, reinjects the merged version
 	S.DataType mergeModel() {
-		S.DataType model;
+		auto updates = filteredUpdates;
 
-		auto merge = jsonDup(_originalJson);
-		merge.jsonMerge(filteredUpdates);
-		model.deserializeJson(merge);
+		if (isObject(updates) && updates.length) {
+			S.DataType model;
+			auto merge = jsonDup(_originalJson);
 
-		static if (is(model : GraphModelInterface)) {
-			model.graphState = _serializer.data.graphState;
-			if (model.graphInstance) {
-				model.graphInstance.inject(model);
+			merge.jsonMerge(updates);
+			model.deserializeJson(merge);
+
+			static if (is(S.DataType : GraphStateInterface)) {
+				model.graphState = _serializer.data.graphState;
+				if (_serializer.data.graphInstance) {
+					_serializer.data.graphInstance.inject(model);
+				}
+				model.graphTouch;
 			}
+			return model;
 		}
 
 		return model;
