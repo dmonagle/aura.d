@@ -21,8 +21,8 @@ string defineGraphBelongsToProperty(M, string propertyName, string key, string f
 		immutable string _key = key;
 	
 	return format(`
-		@ignore @property %1$s %2$s() {
-			assert(graphInstance, "Attempted to use GraphBelongsTo property '%2$s(%1$s)' on model '" ~ graphType ~ "' without a graphInstance");
+		@ignore @property %1$s %2$s(string file = __FILE__, typeof(__LINE__) line = __LINE__) {
+			enforce(graphInstance, "Attempted to use GraphBelongsTo property '%2$s(%1$s)' on model '" ~ graphType ~ "' without a graphInstance", file, line);
 			return graphGetBelongsTo!%1$s("%3$s", %4$s);
 		}
 	`, M.stringof, _propertyName, foreignKey, _key);
