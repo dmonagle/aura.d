@@ -113,7 +113,14 @@ class Graph(A ...) {
 		}
 	}
 
-	/// Returns true if there are models in the graph that need syncing.
+	/// Returns the number of models of the given type in the graph that need syncing.
+	@property ulong unsyncedCount(M)() {
+		auto store = modelStore!M;
+		if (!store) return 0;
+		return store.pendingSync.length;
+	}
+
+	/// Returns the number of models in the graph that need syncing.
 	@property ulong unsyncedCount() {
 		ulong result;
 
