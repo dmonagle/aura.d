@@ -57,10 +57,15 @@ class ContextSerializer(C, D) : ContextSerializerInterface {
 		else			
 			return json.filterOut(_updateAttributes);
 	}
+
+	/// Returns the raw Json that the filters work with. This should be overridden if custom fields are to be added
+	Json rawJson() {
+		if (!data) return Json(null);
+		return data.serializeToJson;
+	}
 	
 	Json toJson() {
-		if (!data) return Json(null);
-		auto json = data.serializeToJson;
+		auto json = rawJson;
 
 		json = jsonFilterAccess(json);
 
