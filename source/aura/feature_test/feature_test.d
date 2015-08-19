@@ -30,7 +30,8 @@ debug (featureTest) {
 		static uint scenariosPending;
 		static FeatureTest[] features;
 		static Failure[] failures;
-		
+		static Failure[] pending;
+
 		static this() {
 			writeln("Feature Testing Enabled!".color(fg.light_green));
 		}
@@ -59,13 +60,24 @@ debug (featureTest) {
 			scenariosFailed = 0;
 			scenariosPending = 0;
 			failures = [];
+			pending = [];
 		}
 		
 		static string toString() {
 			string output;
 			
+			if (pending.length) {
+				output ~= "\n--- Pending ---\n\n".color(fg.light_yellow);
+				foreach(failure; pending) {
+					output ~= format("%s %s\n", "Feature:".color(fg.light_yellow), failure.feature.color(fg.light_white, bg.init, mode.bold));
+					output ~= format("\t%s\n".color(fg.light_yellow), failure.scenario);
+					output ~= format("\t%s(%s)\n".color(fg.cyan), failure.detail.file, failure.detail.line);
+					output ~= format("\t%s\n\n", failure.detail.msg);
+				}
+			}
+
 			if (failures.length) {
-				output ~= "\n!!! Failures !!!\n\n".color(fg.light_red);
+				output ~= "\n!-- Failures --!\n\n".color(fg.light_red);
 				foreach(failure; failures) {
 					output ~= format("%s %s\n", "Feature:".color(fg.light_yellow), failure.feature.color(fg.light_white, bg.init, mode.bold));
 					output ~= format("\t%s\n".color(fg.light_red), failure.scenario);
@@ -76,7 +88,7 @@ debug (featureTest) {
 			else {
 				output ~= "All feature tests passed successfully!\n".color(fg.light_green);
 			}
-			
+
 			output ~= format("  Features tested: %s\n", featuresTested.to!string.color(fg.light_cyan));
 			output ~= format(" Scenarios tested: %s\n", scenariosTested.to!string.color(fg.light_cyan));
 			if (scenariosPassed) output ~= format(" Scenarios passed: %s\n", scenariosPassed.to!string.color(fg.light_green));
@@ -208,18 +220,20 @@ debug (featureTest) {
 
 					auto featureTestException = cast(FeatureTestException)t;
 					scenarioPass = false;
+					auto failure = FeatureTestRunner.Failure(name, scenario.name, t);
 
 					if (featureTestException && featureTestException.pending) {
 						failMessage = "[ PENDING ]".color(fg.black, bg.light_yellow);
 						FeatureTestRunner.incPending;
+						FeatureTestRunner.pending ~= failure;
 					}
 					else {
 						failMessage = "[ FAIL ]".color(fg.black, bg.light_red);
 						FeatureTestRunner.incFailed;
+						FeatureTestRunner.failures ~= failure;
 					}
 
 					FeatureTestRunner.logln(failMessage);
-					FeatureTestRunner.failures ~= FeatureTestRunner.Failure(name, scenario.name, t);
 
 					// Rethrow the original error if it's not an AsserError or a FeatureTestException
 					if (!cast(AssertError)t && !featureTestException) throw t;
