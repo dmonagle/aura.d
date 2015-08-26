@@ -11,22 +11,22 @@ mixin template MultiRoles(RoleEnum) {
 	}
 
 	/// Check if a user has any of the supplied roles
-	bool hasRole(RoleEnum[] checkRoles ...) {
+	bool hasRole(const RoleEnum[] checkRoles ...) const {
 		foreach(role; checkRoles) if (roles.canFind(role)) return true;
 		return false;
 	}
 	
 	/// Add a role to the user
-	void addRole(RoleEnum r) {
+	void addRole(const RoleEnum r) {
 		if (!roles.canFind(r)) roles ~= r;
 	}
 
-	void addRoles(RoleEnum[] roles ...) {
+	void addRoles(const RoleEnum[] roles ...) {
 		foreach(role; roles) addRole(role);
 	}
 
 	/// Remove a role from a user
-	void removeRole(RoleEnum r) {
+	void removeRole(const RoleEnum r) {
 		roles = roles.remove!((role) => role == r);
 	}
 }
