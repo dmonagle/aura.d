@@ -1,4 +1,11 @@
-﻿module aura.feature_test.shoulds;
+﻿/**
+	* Helper functions for assertions in unit testing
+	*
+	* Copyright: © 2015 David Monagle
+	* License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+	* Authors: David Monagle
+*/
+module aura.feature_test.shoulds;
 
 debug (featureTest) {
 	import aura.feature_test.feature_test;
@@ -7,6 +14,7 @@ debug (featureTest) {
 
 	import vibe.web.rest;
 	import vibe.http.server;
+
 	/// Calls the given expression and returns true if it throws a RestException with the given status
 	bool shouldThrowRestException(E)(lazy E expression, HTTPStatus status, string file = __FILE__, typeof(__LINE__) line = __LINE__) {
 		try {
@@ -36,11 +44,22 @@ debug (featureTest) {
 		}
 	}
 
+	/// The expression should evaluate to true
 	alias shouldBeTrue = should!((e) => e ? true : false, "be true");
+	/// The expression should evaluate to false
 	alias shouldBeFalse = should!((e) => e ? false : true, "be false");
+	/// The expression should evaluate to the given value
 	alias shouldEqual = shouldValue!((e, v) => e == v, "equal");
+	/// The expression should be greater than the given value
 	alias shouldBeGreaterThan = shouldValue!((e, v) => e > v, "be greater than");
+	/// The expression should be greater than or equal to the given value
+	alias shouldBeGreaterThanOrEqualTo = shouldValue!((e, v) => e >= v, "be greater than");
+	/// The expression should be less than the given value
 	alias shouldBeLessThan = shouldValue!((e, v) => e < v, "be less than");
+	/// The expression should be less than or equal to the given value
+	alias shouldBeLessThanOrEqualTo = shouldValue!((e, v) => e <= v, "be less than");
+	/// The expression should not be empty
+	/// The result of the expression must have a length property
 	alias shouldNotBeEmpty = should!((e) => e.length ? true : false, "not be empty");
 
 	import aura.data.json;
