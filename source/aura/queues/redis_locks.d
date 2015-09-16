@@ -104,72 +104,75 @@ private:
 
 alias RedisLock = RedisLockBase!(false);
 
-unittest {
-	auto redisClient = new RedisClient();
-	auto db = redisClient.getDatabase(0);
-	
-	if (true) {
+debug (redis) {
+	unittest {
+		auto redisClient = new RedisClient("redis");
+		auto db = redisClient.getDatabase(0);
+		
+		if (true) {
+			auto l = RedisLock(db, "unittest/lockTest1");
+			assert(l.lock());
+			assert(l.locked);
+			assert(l.mine); 
+		}
+		
+		// Previous lock should be valid from outside scope
 		auto l = RedisLock(db, "unittest/lockTest1");
-		assert(l.lock());
 		assert(l.locked);
-		assert(l.mine); 
+		assert(!l.lock);
+		assert(!l.mine);
+		assert(!l.unlock); // Can't call unlock as this struct didn't create the lock
+		assert(l.locked);
+		l.forceUnlock; // It can be forced though
+		assert(!l.locked);
 	}
-	
-	// Previous lock should be valid from outside scope
-	auto l = RedisLock(db, "unittest/lockTest1");
-	assert(l.locked);
-	assert(!l.lock);
-	assert(!l.mine);
-	assert(!l.unlock); // Can't call unlock as this struct didn't create the lock
-	assert(l.locked);
-	l.forceUnlock; // It can be forced though
-	assert(!l.locked);
 }
-
 
 alias RedisScopedLock = RedisLockBase!(true);
 
-unittest {
-	auto redisClient = new RedisClient();
-	auto db = redisClient.getDatabase(0);
+debug (redis) {
+	unittest {
+		auto redisClient = new RedisClient("redis");
+		auto db = redisClient.getDatabase(0);
 
-	if (true) {
+		if (true) {
+			auto l = RedisScopedLock(db, "unittest/lockTest1");
+			assert(l.lock());
+			assert(l.locked);
+			assert(l.mine); 
+
+			auto l2 = RedisScopedLock(db, "unittest/lockTest1");
+			assert(!l2.lock()); // Lock should fail as it uses the same key as the previous lock
+			assert(l2.locked); // It should still be locked however
+			assert(!l2.mine); // But the lock doesn't belong to this struct
+		}
+
+		// Previous locks should be released after they go out of scope
 		auto l = RedisScopedLock(db, "unittest/lockTest1");
-		assert(l.lock());
-		assert(l.locked);
-		assert(l.mine); 
-
-		auto l2 = RedisScopedLock(db, "unittest/lockTest1");
-		assert(!l2.lock()); // Lock should fail as it uses the same key as the previous lock
-		assert(l2.locked); // It should still be locked however
-		assert(!l2.mine); // But the lock doesn't belong to this struct
+		assert(!l.locked);
+		assert(l.lock);
 	}
 
-	// Previous locks should be released after they go out of scope
-	auto l = RedisScopedLock(db, "unittest/lockTest1");
-	assert(!l.locked);
-	assert(l.lock);
-}
+	// Test the lambda version
+	unittest {
+		auto redisClient = new RedisClient("redis");
+		auto db = redisClient.getDatabase(0);
 
-// Test the lambda version
-unittest {
-	auto redisClient = new RedisClient();
-	auto db = redisClient.getDatabase(0);
+		auto l = RedisScopedLock(db, "unittest/lockTest");
 
-	auto l = RedisScopedLock(db, "unittest/lockTest");
+		bool firstLock;
+		bool secondLockFail;
 
-	bool firstLock;
-	bool secondLockFail;
-
-	l.lock(() {
-		firstLock = true;
 		l.lock(() {
-			secondLockFail = false;
-		},
-		() {
-			secondLockFail = true;
+			firstLock = true;
+			l.lock(() {
+				secondLockFail = false;
+			},
+			() {
+				secondLockFail = true;
+			});
 		});
-	});
-	assert(firstLock);
-	assert(secondLockFail);
+		assert(firstLock);
+		assert(secondLockFail);
+	}
 }

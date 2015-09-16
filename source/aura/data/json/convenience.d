@@ -28,9 +28,8 @@ bool isFloat(const ref Json json) {
 }
 
 bool isNumber(const ref Json json) {
-	return (json.isInt || json.isFloat);
+	return (isInt(json) || isFloat(json));
 }
-
 
 bool isUndefined(const ref Json json) {
 	return json.type == Json.Type.undefined;
@@ -40,3 +39,6 @@ bool isNull(const ref Json json) {
 	return json.type == Json.Type.null_;
 }
 
+bool isSet(const ref Json json) {
+	return !(isNull(json) || isUndefined(json));
+}

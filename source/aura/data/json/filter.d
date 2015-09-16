@@ -1,10 +1,15 @@
 ﻿module aura.data.json.filter;
 
 import aura.data.json.dup;
+import aura.data.json.convenience;
+import aura.data.attribute_tree;
 
 ref Json jsonFilterOutInPlace(const string separator = ".")(ref Json original, string[] filters ...) {
 	import std.string;
-	
+
+	// Only work on objects
+	if (!isObject(original)) return original;
+
 	foreach(string key; filters) {
 		auto filter = key.split(separator);
 		
@@ -88,3 +93,58 @@ unittest {
 	assert("value" !in filtered.engine);
 }
 
+/// Returns a Json object that only has keys that are part of the given attributes
+Json filterIn(ref Json original, AttributeTree attributes) 
+in { assert(original.type == Json.Type.object); } body {	
+	return jsonDup!(
+		(key) => attributes.exists(key)
+		)(original);
+}
+
+unittest {
+	auto model = Json.emptyObject;
+	
+	model.make = "Ford";
+	model.model = "Falcon";
+	model.wholesale = 5;
+	model.retail = 5000;
+	model.engine = Json.emptyObject;
+	model.engine.capacity = 4000;
+	model.engine.value = 100;
+	
+	auto filtered = model.filterIn(["model", "engine.capacity"].serializeToAttributeTree);
+	
+	assert(filtered.model == "Falcon");
+	assert("make" !in filtered);
+	assert(filtered.engine.capacity == 4000);
+	assert("value" !in filtered.engine);
+}
+
+/// Returns a Json object without any of the keys specified with attributes
+Json filterOut(ref Json original, AttributeTree attributes)
+in { assert(original.type == Json.Type.object); } body {	
+	return jsonDup!(
+		(key) => !attributes.isLeaf(key)
+		)(original);
+}
+
+unittest {
+	auto model = Json.emptyObject;
+	
+	model.make = "Ford";
+	model.model = "Falcon";
+	model.wholesale = 5;
+	model.retail = 5000;
+	model.engine = Json.emptyObject;
+	model.engine.capacity = 4000;
+	model.engine.value = 100;
+	
+	auto filtered = model.filterOut(["wholesale", "retail", "engine.value"].serializeToAttributeTree);
+	assert(filtered.make == "Ford");
+	assert("wholesale" !in filtered);
+	assert("retail" !in filtered);
+	assert(filtered.engine.capacity == 4000);
+	assert("value" !in filtered.engine);
+	
+	assert(model.retail == 5000);
+}

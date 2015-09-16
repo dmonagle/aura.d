@@ -25,6 +25,10 @@ struct ApiModelParams {
 		resetFilters;
 	}
 	
+	this(M)(Json params, M model) {
+		this(params, model.serializeToBson);
+	}
+	
 	ref ApiModelParams resetFilters() {
 		this._filteredParams = jsonDup(params);
 		return this;

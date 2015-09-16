@@ -1,17 +1,27 @@
-﻿module aura.services.mandrill.structs.Message;
+﻿module aura.services.mandrill.structs;
 
-import aura.services.mandrill.structs.Attachment;
-import aura.services.mandrill.structs.Image;
-import aura.services.mandrill.structs.recipients;
-import aura.services.mandrill.structs.merge_vars;
-
-import vibe.data.serialization; 
-
+import aura.data.json; 
 import std.typecons;
 
-enum MergeLanguage {
-	mailchimp,
-	handlebars
+/// a single supported attachment
+struct Attachment {
+	/// the MIME type of the attachment
+	string type;
+	/// the file name of the attachment
+	string name;
+	/// the content of the attachment as a base64-encoded string
+	string content;
+}
+
+/// a single embedded image
+struct Image {
+	/// the MIME type of the image - must start with "image/"
+	string type;
+	/// the Content ID of the image - 
+	/// use <img src="cid:THIS_VALUE"> to reference the image in your HTML content
+	string name;
+	/// the content of the image as a base64-encoded string
+	string content;
 }
 
 struct Message {
@@ -98,4 +108,74 @@ struct Message {
 	/// If you specify a time in the past, the message will be sent immediately. 
 	/// An additional fee applies for scheduled email, and this feature is only available to accounts with a positive balance.
 	string send_at;
+}
+
+struct RecipientMergeVar {
+	/// the email address of the recipient that the merge variables should apply to (required)
+	string rcpt;
+	/// the recipient's merge variables
+	MergeVar[] vars;
+}
+
+struct MergeVar {
+	/// the merge variable's name. Merge variable names are case-insensitive and may not start with _
+	string name;
+	/// the merge variable's content
+	Json content = Json(null);
+}
+
+enum MergeLanguage {
+	mailchimp,
+	handlebars
+}
+
+/// metadata for a single recipient
+struct RecipientMetadata {
+	/// the email address of the recipient that the metadata is associated with
+	string rcpt;
+	/// an associated array containing the recipient's unique metadata. 
+	/// If a key exists in both the per-recipient metadata and the global metadata, the per-recipient metadata will be used.
+	string[] values;
+}
+
+enum RecipientType {
+	to,
+	cc,
+	bcc
+}
+
+/// a single recipient's information.
+struct Recipient {
+	/// the email address of the recipient
+	string email;
+	/// the optional display name to use for the recipient
+	string name;
+	/// the header type to use for the recipient, defaults to "to" if not provided
+	/// oneof(to, cc, bcc)
+	@byName RecipientType type;
+}
+
+/// the sending results for a single recipient
+struct SendResult {
+	/// the sending status of the recipient - either "sent", "queued", "scheduled", "rejected", or "invalid"
+	string status;
+	/// the email address of the recipient
+	string email;
+	/// the reason for the rejection if the recipient status is "rejected"
+	/// one of "hard-bounce", "soft-bounce", "spam", "unsub", "custom", "invalid-sender", "invalid", "test-mode-limit", or "rule"
+	Nullable!string reject_reason;
+	
+	/// the message's unique id
+	string _id;
+}
+
+/// the injection of a single piece of content into a single editable region
+struct TemplateContent {
+	/// the name of the mc:edit editable region to inject into
+	string name;
+	/// the content to inject
+	string content;
+}
+
+struct User {
 }

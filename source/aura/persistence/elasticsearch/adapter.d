@@ -2,30 +2,21 @@
 
 public import aura.persistence.core;
 
-import elasticsearch.client;
 public import elasticsearch.parameters;
+import elasticsearch.client;
 import elasticsearch.api.actions.base;
 import elasticsearch.api.actions.indices;
 
 import vibe.core.log;
 import vibe.inet.url;
 
-class EsAdapter : PersistenceAdapter {
+class EsAdapter(M ...) : PersistenceAdapter!M {
 	private {
 		Client _client;
 		string[] _hosts;
-
-		CacheContainer!Json _cache;
 	}
 
-	this(string applicationName, string environment, string[] hosts ...) {
-		super(applicationName, environment);
-		_hosts = hosts;
-	}
-
-	void registerModel(M)(ModelMeta m) {
-		registerPersistenceModel!M(m);
-	}
+	@property ref string[] hosts() { return _hosts; }
 
 	@property Client client() {
 		import vibe.core.log;
@@ -48,31 +39,28 @@ class EsAdapter : PersistenceAdapter {
 		return _client;
 	}
 
-	void ensureIndex(M)(string content, bool drop = false) {
-		auto name = fullName(modelMeta!M.containerName);
-		if (drop) {
-			deleteIndex!M;
-		}
-		if (!_client.indexExists(name)) {
+	/// Returns an index name for the specified container name by prepending the database name
+	string indexName(const string cName) {
+		return databaseName ~ "_" ~ cName;
+	}
+
+	void ensureIndex(M)(string content) {
+		auto name = indexName(containerName!M);
+		if (!client.indexExists(name)) {
 			logInfo("Creating Elasticsearch Index: '%s'", name);
-			_client.createIndex(name, content);
+			client.createIndex(name, content);
 		}
 	}
 
 	void deleteIndex(M)() {
-		auto name = fullName(modelMeta!M.containerName);
-		if (_client.indexExists(name)) {
+		auto name = indexName(containerName!M);
+		if (client.indexExists(name)) {
 			logInfo("Deleting Elasticsearch Index: '%s'", name);
-			_client.deleteIndex(name);
+			client.deleteIndex(name);
 		}
 	}
 
-	void index(M)(const ref Json model) {
-		auto meta = modelMeta!M;
-		client.index(fullName(meta.containerName), meta.type, model._id.to!string, model.toString());
-	}
-
-	void index(M)(M model) {
+	bool save(M)(ref M model) {
 		static if (__traits(compiles, model.toIndexedJson)) {
 			auto json = model.toIndexedJson;
 		}
@@ -80,16 +68,15 @@ class EsAdapter : PersistenceAdapter {
 			auto json = model.serializeToJson;
 		}
 
-		index!M(json);
+		client.index(indexName(containerName!M), model.persistenceType, model.persistenceId, json.toString);
+		return true;
 	}
 
 	Json search(M)(string searchBody, Parameters params = Parameters()) {
-		auto meta = modelMeta!M;
-
 		params["body"] = searchBody;
-		params["index"] = fullName(meta.containerName);
+		params["index"] = indexName(containerName!M);
 		if ("type" !in params)
-			params["type"] = meta.type;
+			params["type"] = M.stringof;
 		else {
 			// If the type is specified as blank, remove the type
 			if (!params["type"].length) params.remove("type");
@@ -98,5 +85,19 @@ class EsAdapter : PersistenceAdapter {
 		auto response = client.search(params);
 
 		return response.jsonBody;
+	}
+
+	/// Returns an array of deserialized models matching the list of ids given
+	ModelType[] storeFindMany(ModelType, string key = "", StoreType, IdType)(StoreType store, const IdType[] ids ...) {
+		ModelType[] returnModels;
+
+		return returnModels;
+	}
+	
+	/// Returns a single deserialized model matching the given id
+	ModelType storeFindOne(ModelType, string key = "", StoreType, IdType)(StoreType store, const IdType id) {
+		ModelType returnModel;
+		
+		return returnModel;
 	}
 }

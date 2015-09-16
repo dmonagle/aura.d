@@ -2,7 +2,8 @@
 
 import vibe.data.serialization;
 
-mixin template Roles(RoleEnum) {
+/// Mixin that allows the class to have a "roles" member which can contain one or more roles
+mixin template MultiRoles(RoleEnum) {
 	import std.algorithm;
 
 	@optional {
@@ -10,22 +11,22 @@ mixin template Roles(RoleEnum) {
 	}
 
 	/// Check if a user has any of the supplied roles
-	bool hasRole(RoleEnum[] checkRoles ...) {
+	bool hasRole(const RoleEnum[] checkRoles ...) const {
 		foreach(role; checkRoles) if (roles.canFind(role)) return true;
 		return false;
 	}
 	
 	/// Add a role to the user
-	void addRole(RoleEnum r) {
+	void addRole(const RoleEnum r) {
 		if (!roles.canFind(r)) roles ~= r;
 	}
 
-	void addRoles(RoleEnum[] roles ...) {
+	void addRoles(const RoleEnum[] roles ...) {
 		foreach(role; roles) addRole(role);
 	}
 
 	/// Remove a role from a user
-	void removeRole(RoleEnum r) {
+	void removeRole(const RoleEnum r) {
 		roles = roles.remove!((role) => role == r);
 	}
 }
@@ -38,7 +39,7 @@ unittest {
 			guest
 		}
 
-		mixin Roles!Role;
+		mixin MultiRoles!Role;
 	}
 
 	User u;

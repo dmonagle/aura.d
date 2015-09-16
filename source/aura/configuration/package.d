@@ -1,3 +1,3 @@
 ﻿module aura.configuration;
 
-public import aura.configuration.ConfigDirectoryReader;
+public import aura.configuration.yaml;

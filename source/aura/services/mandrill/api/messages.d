@@ -2,9 +2,7 @@
 
 import aura.data.json;
 
-import aura.services.mandrill.structs.Message;
-import aura.services.mandrill.structs.SendResult;
-import aura.services.mandrill.structs.templates;
+import aura.services.mandrill.structs;
 import aura.services.mandrill.client;
 
 SendResult[] send(Client client, Message m) {
