@@ -1,7 +1,6 @@
 ﻿module aura.graph.core.embedded;
 
-import aura.util.traits;
-import aura.util.null_bool;
+import aura.graph.serialization;
 
 import std.typetuple;
 

@@ -1,38 +1,24 @@
-﻿module aura.graph.core.model;
-
-import aura.graph.core.relationships;
+﻿/**
+	* Graph Model
+	*
+	* Copyright: © 2015 David Monagle
+	* License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+	* Authors: David Monagle
+*/
+module aura.graph.core.model;
 
 import aura.graph.core.graph;
+import aura.graph.value;
 import vibe.data.serialization;
-public import vibe.data.serialization;
 
-alias GraphId = string;
+import std.algorithm;
+import std.array;
 
-/*
- * Example: If the state is both dirty and deleted, then it is pending deletion
-*/
-struct GraphState {
-	GraphId id;
-
-	bool persisted = false;
-	bool dirty = false;
-	bool deleted = false;
-
-	@property bool validId() const {
-		return id.length ? true : false;
-	}
-
-	@property bool isNew() const {
-		return !persisted && !deleted;
-	}
-
-	@property bool needsSync() const {
-		return isNew || dirty;
-	}
-}
-
-// Adds a property to a class that will return the class name at runtime. Works on base classes to return the child class type
+/// Adds a property to a class that will return the class name at runtime. Works on base classes to return the child class type
+/// Eg. const graph.graph.Graph is returned as Graph
 mixin template GraphTypeProperty() {
+	/// Returns a string representation of the class name
+	/// Removes const and namespaceing so it should match the name of the class called with stringof
 	@ignore @property string graphType() const {
 		import std.string;
 		import std.regex;
@@ -40,110 +26,121 @@ mixin template GraphTypeProperty() {
 		auto constMatch = ctRegex!`^const\((.*)\)$`;
 		auto typeString = typeid(this).toString();
 		
-		if (auto matches = typeString.matchFirst(constMatch)) {
-			typeString = matches[1];
-		}
+		// Remove the const qualifier 
+		if (auto matches = typeString.matchFirst(constMatch)) typeString = matches[1];
 		
+		// Return the text after the last .
 		return typeString.split(".")[$ - 1];
 	}
 }
 
-interface GraphStateInterface {
-	/// Returns the current state of the model
-	@property ref GraphState graphState();
-	@property GraphState graphState() const;
+
+interface GraphModelInterface {
 	@property string graphType() const;
-
-	final @property bool isNew() const {
-		return graphState.isNew;
-	}
-}
-
-
-interface GraphModelInterface(GraphType) : GraphStateInterface {
-	alias ModelInterface = GraphModelInterface!GraphType;
-
-	@property ref GraphType graphInstance();
-	@property ref ModelInterface graphParent();
-
-	final @property bool validGraphId() const {
-		return graphState.validId;
-	}
 	
-	final @property string graphId() const {
-		return graphState.id;
-	}
+	@property bool graphPersisted() const;
+	@property void graphPersisted(bool value);
 	
-	final @property bool graphNeedsSync() const {
-		return graphState.needsSync;
-	}
-
+	@property bool graphSynced() const;
 	void graphTouch();
 	void graphUntouch();
+	
+	@property bool graphDeleted() const;
 	void graphDelete();
 	void graphUndelete();
+	
+	@property inout(Graph) graphInstance() inout;
+	@property void graphInstance(Graph value);
+	
+	GraphValue toGraphValue();
+	bool graphHasSnapshot() const;
+	void clearGraphSnapshot();
+	@property ref GraphValue graphSnapshot();
+	@property GraphValue graphSnapshot() const;
 }
 
-class GraphModel(GraphType) : GraphModelInterface!GraphType {
-	alias ModelInterface = GraphModelInterface!GraphType;
-
+/// Mixin to implement basic functionality to a `GraphModelInterface`
+mixin template GraphModelImplementation() {
 	mixin GraphTypeProperty;
-
-	override @ignore @property GraphState graphState() const {
-		return _graphState;
-	}
-
-	override @property ref GraphState graphState() {
-		return _graphState;
-	}
-
-	override @ignore @property ref GraphType graphInstance() {
-		return _graph;
-	}
-
-	override @ignore @property ref ModelInterface graphParent() {
-		return _graphParent;
-	}
-
-
-	// Marks the model to be saved by Graph
-	override void graphTouch() {
-		graphState.dirty = true;
+	
+	@ignore bool graphPersisted() const { return _graphPersisted; }
+	void graphPersisted(bool value) { _graphPersisted = value;}
+	
+	@ignore @property bool graphSynced() const { return _graphSynced; }
+	void graphTouch() { _graphSynced = false; }
+	void graphUntouch() { _graphSynced = true; }
+	
+	bool graphDeleted() const { return _graphDeleted; }
+	void graphDelete() { _graphDeleted = true; }
+	void graphUndelete() { _graphDeleted = false; }
+	
+	@ignore @property inout(Graph) graphInstance() inout { return _graphInstance; }
+	@property Graph graphInstance() { return _graphInstance; }
+	@property void graphInstance(Graph value) { _graphInstance = value; }
+	
+	GraphValue toGraphValue() { 
+		return serialize!GraphValueSerializer(this);
 	}
 	
-	// Marks the model to be deleted by Graph
-	override void graphDelete() {
-		graphState.deleted = true;
-		graphState.dirty = true;
+	bool graphHasSnapshot() const {
+		return _snapshot.isNull ? false : true;
 	}
 	
-	// Removes the save flag from the model
-	override void graphUntouch() {
-		graphState.dirty = false;
+	void clearGraphSnapshot() {
+		_snapshot = null;
 	}
 	
-	// Removes the delete flag from the model
-	override void graphUndelete() {
-		graphState.deleted = false;
-		graphState.dirty = true;
+	@ignore @property ref GraphValue graphSnapshot() {
+		return _snapshot;
 	}
-
-protected:
-	M graphGetBelongsTo(M, T)(string foreignKey, T value) {
-		assert(graphInstance, "Attempted to use BelongsTo '" ~ M.stringof ~ "." ~ (foreignKey.length ? foreignKey : "id") ~ "' without a graphInstance");
-
-		M returnValue;
-		if (isNotNull(value)) returnValue = graphInstance.find!M(foreignKey, value);
-		return returnValue;
+	
+	@property GraphValue graphSnapshot() const {
+		return _snapshot;
 	}
-
-	M graphGetBelongsTo(M, T)(T value) {
-		return graphGetBelongsTo!M("", value);
-	}
-
+	
 private:
-	GraphState _graphState;
+	Graph _graphInstance;
+	GraphValue _snapshot;
+	bool _graphPersisted;
+	bool _graphSynced;
+	bool _graphDeleted;
+}
 
-	GraphType _graph;
-	ModelInterface _graphParent;
+/// Copy the serializable attributes from source to destination
+M copyGraphAttributes(M : GraphModelInterface)(ref M dest, const ref M source) {
+	import aura.graph.serialization;
+	foreach (i, mname; SerializableFields!M) {
+		__traits(getMember, dest, mname) = __traits(getMember, source, mname);
+	}
+	return dest;
+}
+
+/// Merge the GraphValue data into the given model
+M merge(M : GraphModelInterface)(ref M model, GraphValue data) {
+	auto attributes = Graph.serializeModel(model);
+	auto newModel = Graph.deserializeModel!M(aura.graph.value.helpers.merge(attributes, data));
+	model.copyGraphAttributes(newModel);
+	
+	return model;
+}
+
+version (unittest) {
+	class Person : GraphModelInterface {
+		mixin GraphModelImplementation;
+		
+		string firstName;
+		string surname;
+		int age;
+		double wage;
+	}
+	
+	unittest {
+		auto person = new Person;
+		person.surname = "Monagle";
+		auto data = GraphValue.emptyObject;
+		data["firstName"] = "David";
+		person.merge(data);
+		assert(person.surname == "Monagle");
+		assert(person.firstName == "David");
+	}
 }
