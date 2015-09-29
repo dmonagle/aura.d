@@ -36,6 +36,12 @@ class Graph {
 		return _store[M.stringof];
 	}
 
+	bool sync() {
+		if (!_adapter) return false;
+		_adapter.sync(this);
+		return true;
+	}
+
 private:
 	GraphModelInterface[][string] _store;
 	GraphAdapterInterface _adapter;

@@ -107,6 +107,11 @@ private:
 	bool _graphDeleted;
 }
 
+/// Default impolementation of GraphModelInterface
+class GraphModel : GraphModelInterface {
+	mixin GraphModelImplementation;
+}
+
 /// Copy the serializable attributes from source to destination
 M copyGraphAttributes(M : GraphModelInterface)(ref M dest, const ref M source) {
 	import aura.graph.serialization;
