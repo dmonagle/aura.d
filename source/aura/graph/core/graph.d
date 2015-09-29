@@ -8,8 +8,9 @@
 module aura.graph.core.graph;
 
 import aura.graph.core.model;
-
 import aura.graph.value;
+import aura.graph.core.adapter;
+
 import vibe.data.serialization;
 
 import std.algorithm;
@@ -17,14 +18,6 @@ import std.array;
 
 /// Main storage class for Graph
 class Graph {
-	static GraphValue serializeModel(M : GraphModelInterface)(M model) {
-		return serialize!GraphValueSerializer(model);
-	}
-	
-	static M deserializeModel(M : GraphModelInterface)(GraphValue value) {
-		return deserialize!(GraphValueSerializer, M)(value);
-	}
-	
 	M inject(M : GraphModelInterface)(M model, bool snapshot = true) 
 	in {
 		assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
@@ -34,22 +27,9 @@ class Graph {
 			model.graphInstance = this;
 			modelStore!M ~= model;
 		}
-		if (snapshot) model.graphSnapshot = serializeModel(model);
+		if (snapshot) model.takeSnapshot;
 		return model;
 	}
-
-	/// Reverts the model back to the snapshot state if the snapshot exists
-	void revert(M : GraphModelInterface)(ref M model) 
-	in {
-		assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
-	}
-	body {
-		if (model.graphInstance !is this) return;
-		if (!model.graphHasSnapshot) return;
-		auto reverted = deserializeModel!M(model.graphSnapshot);
-		model.copyGraphAttributes(reverted);
-	}
-
 
 	ref GraphModelInterface[] modelStore(M)() {
 		if (M.stringof !in _store) return (_store[M.stringof] = []);
@@ -58,6 +38,7 @@ class Graph {
 
 private:
 	GraphModelInterface[][string] _store;
+	GraphAdapterInterface _adapter;
 }
 
 /// Returns an array of M from within the graph that match the given predicate
@@ -129,7 +110,7 @@ version (unittest) {
 		ginny.title = "Mrs";
 		assert(ginny.graphSnapshot["title"] == "Miss");
 		auto oldGinny = ginny;
-		graph.revert(ginny);
+		ginny.revertToSnapshot;
 		assert(ginny.title == "Miss");
 		assert(oldGinny is ginny);
 	}

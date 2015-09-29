@@ -138,3 +138,13 @@ unittest {
 	assert(dTest.number == 17);
 	assert(dTest.text == "DM");
 }
+
+import aura.graph.core.model;
+
+GraphValue serializeToGraphValue(M : GraphModelInterface)(M model) {
+	return serialize!GraphValueSerializer(model);
+}
+
+M deserializeGraphValue(M : GraphModelInterface)(GraphValue value) {
+	return deserialize!(GraphValueSerializer, M)(value);
+}

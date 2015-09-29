@@ -7,9 +7,10 @@
 */
 module aura.graph.core.model;
 
+public import aura.graph.value;
+public import vibe.data.serialization;
+
 import aura.graph.core.graph;
-import aura.graph.value;
-import vibe.data.serialization;
 
 import std.algorithm;
 import std.array;
@@ -117,11 +118,29 @@ M copyGraphAttributes(M : GraphModelInterface)(ref M dest, const ref M source) {
 
 /// Merge the GraphValue data into the given model
 M merge(M : GraphModelInterface)(ref M model, GraphValue data) {
-	auto attributes = Graph.serializeModel(model);
-	auto newModel = Graph.deserializeModel!M(aura.graph.value.helpers.merge(attributes, data));
+	auto attributes = serializeToGraphValue(model);
+	auto newModel = deserializeGraphValue!M(aura.graph.value.helpers.merge(attributes, data));
 	model.copyGraphAttributes(newModel);
 	
 	return model;
+}
+
+/// Creates a snapshot of the model
+GraphValue takeSnapshot(M : GraphModelInterface)(M model) {
+	model.graphSnapshot = serializeToGraphValue(model);
+	return model.graphSnapshot;
+}
+
+
+/// Reverts the model back to the snapshot state if the snapshot exists
+void revertToSnapshot(M : GraphModelInterface)(M model) 
+in {
+	assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
+}
+body {
+	if (!model.graphHasSnapshot) return;
+	auto reverted = deserializeGraphValue!M(model.graphSnapshot);
+	model.copyGraphAttributes(reverted);
 }
 
 version (unittest) {
