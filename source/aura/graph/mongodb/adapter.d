@@ -81,7 +81,11 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 	void ensureIndex(M)(int[string] fieldOrders, IndexFlags flags = cast(IndexFlags)0) {
 		getCollection!M.ensureIndex(fieldOrders, flags);
 	}
-	
+
+	void ensureIndex(M)(scope const(Tuple!(string, int))[] fieldOrders, IndexFlags flags = cast(IndexFlags)0) {
+		getCollection!M.ensureIndex(fieldOrders, flags);
+	}
+
 	Bson dropCollection(string collection) {
 		auto command = Bson.emptyObject;
 		command.drop = collection;
