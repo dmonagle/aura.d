@@ -36,6 +36,8 @@ class Graph {
 		return _store[M.stringof];
 	}
 
+	@property GraphAdapterInterface adapter() { return null; }
+
 	bool sync() {
 		if (!_adapter) return false;
 		_adapter.sync(this);

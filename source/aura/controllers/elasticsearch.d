@@ -3,7 +3,7 @@
 import aura.controllers.pagination;
 import aura.data.json;
 
-import elasticsearch.parameters;
+import elasticsearch.api.parameters;
 
 Json extractElasticsearchResults(Json searchResults, string key, ref PaginationMeta pagination) {
 	auto jsonRecords = Json.emptyArray;
@@ -25,8 +25,8 @@ Json extractElasticsearchResults(Json searchResults, string key, ref PaginationM
 	return json;
 }
 
-Parameters elasticsearchParameters(PaginationMeta pagination) {
-	Parameters p;
+ESParams elasticsearchParameters(PaginationMeta pagination) {
+	ESParams p;
 	
 	p["from"] = pagination.offset.to!string;
 	p["size"] = pagination.perPage.to!string;

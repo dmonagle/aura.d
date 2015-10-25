@@ -53,7 +53,6 @@ interface GraphModelInterface {
 	@property inout(Graph) graphInstance() inout;
 	@property void graphInstance(Graph value);
 	
-	GraphValue toGraphValue();
 	bool graphHasSnapshot() const;
 	void clearGraphSnapshot();
 	@property ref GraphValue graphSnapshot();
@@ -78,10 +77,6 @@ mixin template GraphModelImplementation() {
 	@ignore @property inout(Graph) graphInstance() inout { return _graphInstance; }
 	@property Graph graphInstance() { return _graphInstance; }
 	@property void graphInstance(Graph value) { _graphInstance = value; }
-	
-	GraphValue toGraphValue() { 
-		return serialize!GraphValueSerializer(this);
-	}
 	
 	bool graphHasSnapshot() const {
 		return _snapshot.isNull ? false : true;
