@@ -28,6 +28,13 @@ debug (featureTest) {
 	class TestNotStoredModel : GraphMongoModel {
 	}
 
+	class ElasticSearchIndexer : ElasticsearchIndexProxy!(TestUser, TestPet) {
+		static this() {
+			hosts = ["http://127.0.0.1:9200"];
+			prefix = "test_aura_graph_";
+		}
+	}
+
 	class TestMongoDBAdapter : GraphMongoAdapter!(TestUser, TestPet) {
 		static this() {
 			databaseName = "test_aura_graph";
@@ -47,38 +54,13 @@ debug (featureTest) {
 	class TestPetGraph : Graph {
 		this() {
 			adapter = new TestMongoDBAdapter;
-			counter = new TestGraphCounter;
-			registerGraphEventListener(counter);
+			esIndexer = new ElasticSearchIndexer;
+			registerGraphEventListener(esIndexer);
 		}
 
-		TestGraphCounter counter;
+		ElasticSearchIndexer esIndexer;
 	}
 
-	class TestGraphCounter : GraphEventListener {
-		import std.stdio;
-		import colorize;
-
-		mixin GraphEventListenerImplementation;
-
-		void modelDidSync(GraphModelInterface model) {
-
-			writefln("Count: %s, type: %s".color(fg.light_cyan), counter, model.graphType);
-			++counter;
-		}
-
-		void graphWillSync() {
-			writefln("Starting counting...".color(fg.light_magenta));
-			counter = 0;
-		}
-		
-		void graphDidSync() {
-			writefln("Finished counting: %s".color(fg.light_magenta), counter);
-		}
-		
-
-		int counter;
-	}
-	
 	unittest {
 		feature("Graph store and retrieve", (f) {
 				f.scenario("Create a graph and store models in it", {
@@ -120,8 +102,12 @@ debug (featureTest) {
 						mia.color = "Black";
 						graph.sync.shouldBeTrue();
 
+						graph.esIndexer.modelCount.shouldEqual(2);
+
 						mia.graphDelete;
 						graph.sync.shouldBeTrue();
+
+						graph.esIndexer.modelCount.shouldEqual(1);
 					});			
 			}, "graph");
 	}

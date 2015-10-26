@@ -33,10 +33,11 @@ mixin template GraphInstanceImplementation() {
 protected:
 	Graph _graph;
 }
-alias GraphModelStore = GraphModelInterface[];
 
 /// Main storage class for Graph
 class Graph {
+	mixin GraphModelStoreImplementation;
+
 	/// Injects a model into the graph, optionally initiating a snapshot
 	M inject(M : GraphModelInterface)(M model, bool snapshot = false) 
 	in {
@@ -45,7 +46,7 @@ class Graph {
 	body {
 		if (model.graph !is this) {
 			ensureGraphReferences(model);
-			modelStore!M ~= model;
+			modelStore!(M).addModel(model);
 		}
 		if (snapshot) model.takeSnapshot;
 		return model;
@@ -58,13 +59,7 @@ class Graph {
 		assert (model.graph is this);
 	}
 	body {
-		modelStore!(M).remove(model);
-	}
-
-	/// Returs the modelStore for the given model type
-	ref GraphModelStore modelStore(M)() {
-		if (M.stringof !in _store) return (_store[M.stringof] = []);
-		return _store[M.stringof];
+		modelStore!(M).removeModel(model);
 	}
 
 	/// Returns the adapter for the graph
@@ -115,7 +110,6 @@ class Graph {
 	void emitGraphDidSync() { foreach(listener; _graphEventListeners) listener.graphDidSync(); }
 
 private:
-	GraphModelStore[string] _store;
 	GraphAdapterInterface _adapter;
 	GraphEventListener[] _graphEventListeners;
 }
@@ -124,11 +118,6 @@ private:
 M[] filterModels(M : GraphModelInterface, alias predicate = (m) => true)(Graph graph) {
 	auto results = array(graph.modelStore!M.filter!((m) => predicate(cast(M)m)));
 	return array(results.map!((m) => cast(M)m));
-}
-
-/// Removes the given model from the store
-void remove(M : GraphModelInterface)(ref GraphModelStore store, M model) {
-	store = array(store.filter!((m) => m !is model));
 }
 
 version (unittest) {

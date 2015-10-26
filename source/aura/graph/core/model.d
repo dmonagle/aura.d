@@ -179,3 +179,43 @@ version (unittest) {
 		assert(person.firstName == "David");
 	}
 }
+
+alias GraphModelStore = GraphModelInterface[];
+
+mixin template GraphModelStoreImplementation() {
+	/// Returns the modelStore for the given model type
+	ref GraphModelStore modelStore(string storeName) {
+		if (storeName !in _graphModelStores) return (_graphModelStores[storeName] = []);
+		return _graphModelStores[storeName];
+	}
+
+	/// Returns the total number of models across all stores
+	ulong modelCount() const {
+		ulong count;
+		foreach(store; _graphModelStores) count += store.length;
+		return count;
+	}
+
+	/// ditto
+	ref GraphModelStore modelStore(M)() {
+		return modelStore(M.stringof);
+	}
+
+
+private:
+	GraphModelStore[string] _graphModelStores;
+}
+
+/// Removes the given model from the store
+void removeModel(M : GraphModelInterface)(ref GraphModelStore store, M model) {
+	store = array(store.filter!((m) => m !is model));
+}
+
+/// Adds the given model to the store if it doesn't alrady exist
+bool addModel(M : GraphModelInterface)(ref GraphModelStore store, M model) {
+	if (!store.canFind(model)) {
+		store ~= model;
+		return true;
+	}
+	return false;
+}
