@@ -10,43 +10,114 @@ module aura.graph.core.graph;
 import aura.graph.core.model;
 import aura.graph.value;
 import aura.graph.core.adapter;
+import aura.graph.core.embedded;
+import aura.graph.core.events;
 
 import vibe.data.serialization;
 
 import std.algorithm;
 import std.array;
 
+/// Exposes a graphInstance property
+interface GraphInstanceInterface {
+	@property inout(Graph) graph() inout;
+	@property void graph(Graph value);
+}
+
+
+/// Defines a graph property to comply with `GraphInstanceInterface`
+mixin template GraphInstanceImplementation() {
+	@ignore @property inout(Graph) graph() inout { return _graph; }
+	@property void graph(Graph value) { _graph = value; }
+
+protected:
+	Graph _graph;
+}
+alias GraphModelStore = GraphModelInterface[];
+
 /// Main storage class for Graph
 class Graph {
-	M inject(M : GraphModelInterface)(M model, bool snapshot = true) 
+	/// Injects a model into the graph, optionally initiating a snapshot
+	M inject(M : GraphModelInterface)(M model, bool snapshot = false) 
 	in {
 		assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
 	}
 	body {
-		if (model.graphInstance !is this) {
-			model.graphInstance = this;
+		if (model.graph !is this) {
+			ensureGraphReferences(model);
 			modelStore!M ~= model;
 		}
 		if (snapshot) model.takeSnapshot;
 		return model;
 	}
 
-	ref GraphModelInterface[] modelStore(M)() {
+	/// Removes the given model from the graph, has no effect if the model is not part of the graph
+	void remove(M : GraphModelInterface)(M model)
+	in {
+		assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
+		assert (model.graph is this);
+	}
+	body {
+		modelStore!(M).remove(model);
+	}
+
+	/// Returs the modelStore for the given model type
+	ref GraphModelStore modelStore(M)() {
 		if (M.stringof !in _store) return (_store[M.stringof] = []);
 		return _store[M.stringof];
 	}
 
-	@property GraphAdapterInterface adapter() { return null; }
-
-	bool sync() {
-		if (!_adapter) return false;
-		_adapter.sync(this);
-		return true;
+	/// Returns the adapter for the graph
+	@property GraphAdapterInterface adapter() { return _adapter; }
+	/// Sets the adapter for the graph
+	@property void adapter(GraphAdapterInterface adapter) { 
+		_adapter = adapter; 
+		adapter.graph = this;
 	}
 
+	/// Ensures that `this` is set to be the graph on the model and all embedded models
+	void ensureGraphReferences(M : GraphModelInterface)(M model) {
+		model.graph = this;
+		eachEmbeddedGraph!((model, parent) {
+				model.graph = this;
+				model.graphParent = parent;
+			})(model);
+	}
+
+	/// Initiates a sync of the graph with the adapter
+	bool sync() {
+		if (!_adapter) return false;
+		emitGraphWillSync;
+		auto result =_adapter.sync;
+		emitGraphDidSync;
+		return result;
+	}
+
+	/// Registers the listener with this graph
+	void registerGraphEventListener(GraphEventListener listener) {
+		if (!_graphEventListeners.canFind(listener)) {
+			_graphEventListeners ~= listener;
+			listener.graph = this;
+		}
+	}
+
+	/// Registers the listener with this graph
+	void unregisterGraphEventListener(GraphEventListener listener) {
+		_graphEventListeners = array(_graphEventListeners.filter!((l) => listener !is l));
+	}
+
+	// Emit methods
+	void emitGraphWillSync() { foreach(listener; _graphEventListeners) listener.graphWillSync(); }
+	void emitModelWillSave(GraphModelInterface model) { foreach(listener; _graphEventListeners) listener.modelWillSave(model); }
+	void emitModelDidSave(GraphModelInterface model) { foreach(listener; _graphEventListeners) listener.modelDidSave(model); }
+	void emitModelWillDelete(GraphModelInterface model) { foreach(listener; _graphEventListeners) listener.modelWillDelete(model); }
+	void emitModelDidDelete(GraphModelInterface model) { foreach(listener; _graphEventListeners) listener.modelDidDelete(model); }
+	void emitGraphDidSync() { foreach(listener; _graphEventListeners) listener.graphDidSync(); }
+
 private:
-	GraphModelInterface[][string] _store;
+	GraphModelStore[string] _store;
 	GraphAdapterInterface _adapter;
+	GraphEventListener[] _graphEventListeners;
 }
 
 /// Returns an array of M from within the graph that match the given predicate
@@ -55,14 +126,19 @@ M[] filterModels(M : GraphModelInterface, alias predicate = (m) => true)(Graph g
 	return array(results.map!((m) => cast(M)m));
 }
 
+/// Removes the given model from the store
+void remove(M : GraphModelInterface)(ref GraphModelStore store, M model) {
+	store = array(store.filter!((m) => m !is model));
+}
+
 version (unittest) {
-	class GraphModel : GraphModelInterface {
+	class TestGraphModel : GraphModelInterface {
 		mixin GraphModelImplementation;
 
 		string id;
 	}
 
-	class Animal : GraphModel {
+	class Animal : TestGraphModel {
 		string name;
 	}
 
@@ -97,12 +173,12 @@ version (unittest) {
 	unittest {
 		auto graph = new Graph();
 		
-		auto david = graph.inject(new Human());
+		auto david = graph.inject(new Human(), true); // Inject and take snapshot
 		david.name = "David";
 		david.title = "Mr";
 		assert(graph.modelStore!Human.length == 1);
 		
-		auto ginny = graph.inject(new Human(), false);
+		auto ginny = graph.inject(new Human()); // Default is no snapshot
 		ginny.name = "Ginny";
 		ginny.title = "Miss";
 		assert(graph.modelStore!Human.length == 2);
@@ -121,5 +197,8 @@ version (unittest) {
 		ginny.revertToSnapshot;
 		assert(ginny.title == "Miss");
 		assert(oldGinny is ginny);
+
+		graph.remove(ginny);
+		assert(graph.modelStore!Human.length == 1);
 	}
 }

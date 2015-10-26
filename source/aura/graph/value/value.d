@@ -204,6 +204,12 @@ struct GraphValue {
 		}
 		return GraphValue(value);
 	}
+
+	TT convert(TT, alias func)() {
+		foreach(T; Types) {
+			if (typeid(T) == value.type) return func(value.get!T);
+		}
+	}
 	
 	/// Appends the given element to the array. If the element is an array, it will be nested
 	void append(T)(T newValue, string file = __FILE__, typeof(__LINE__) line = __LINE__)

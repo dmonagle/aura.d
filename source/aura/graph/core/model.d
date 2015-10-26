@@ -36,22 +36,26 @@ mixin template GraphTypeProperty() {
 }
 
 
-interface GraphModelInterface {
+interface GraphModelInterface : GraphInstanceInterface {
 	@property string graphType() const;
-	
+
+	/// Returns true if the model has been persisted to it's primary storage
 	@property bool graphPersisted() const;
 	@property void graphPersisted(bool value);
 	
+	/// If true, all changes have been synced
 	@property bool graphSynced() const;
+
 	void graphTouch();
 	void graphUntouch();
 	
 	@property bool graphDeleted() const;
 	void graphDelete();
 	void graphUndelete();
-	
-	@property inout(Graph) graphInstance() inout;
-	@property void graphInstance(Graph value);
+
+	@property inout(GraphModelInterface) graphParent() inout;
+	@property void graphParent(GraphModelInterface value);
+
 	
 	bool graphHasSnapshot() const;
 	void clearGraphSnapshot();
@@ -62,7 +66,8 @@ interface GraphModelInterface {
 /// Mixin to implement basic functionality to a `GraphModelInterface`
 mixin template GraphModelImplementation() {
 	mixin GraphTypeProperty;
-	
+	mixin GraphInstanceImplementation;
+
 	@ignore bool graphPersisted() const { return _graphPersisted; }
 	void graphPersisted(bool value) { _graphPersisted = value;}
 	
@@ -73,11 +78,10 @@ mixin template GraphModelImplementation() {
 	bool graphDeleted() const { return _graphDeleted; }
 	void graphDelete() { _graphDeleted = true; }
 	void graphUndelete() { _graphDeleted = false; }
-	
-	@ignore @property inout(Graph) graphInstance() inout { return _graphInstance; }
-	@property Graph graphInstance() { return _graphInstance; }
-	@property void graphInstance(Graph value) { _graphInstance = value; }
-	
+
+	@ignore @property inout(GraphModelInterface) graphParent() inout { return _graphParent; }
+	@property void graphParent(GraphModelInterface value) { _graphParent = value; }
+
 	bool graphHasSnapshot() const {
 		return _snapshot.isNull ? false : true;
 	}
@@ -95,8 +99,8 @@ mixin template GraphModelImplementation() {
 	}
 	
 private:
-	Graph _graphInstance;
 	GraphValue _snapshot;
+	GraphModelInterface _graphParent;
 	bool _graphPersisted;
 	bool _graphSynced;
 	bool _graphDeleted;
@@ -141,6 +145,18 @@ body {
 	if (!model.graphHasSnapshot) return;
 	auto reverted = deserializeGraphValue!M(model.graphSnapshot);
 	model.copyGraphAttributes(reverted);
+}
+
+/// Returns a `GraphValue` with the difference between the current state and the snapshot
+GraphValue diffFromSnapshot(M : GraphModelInterface)(M model) 
+in {
+	assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
+}
+body {
+	import aura.graph.value.diff;
+	auto currentState = serializeToGraphValue(model);
+	if (!model.graphHasSnapshot) return currentState;
+	return model.graphSnapshot.diff(currentState);
 }
 
 version (unittest) {

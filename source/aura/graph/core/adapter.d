@@ -10,27 +10,41 @@ module aura.graph.core.adapter;
 import aura.graph.core;
 import std.format;
 
-interface GraphAdapterInterface {
-	/// Return the name of the container to be used for the given modelName
-	string containerNameFor(string modelName);
-	/// Sync all of the models in the given graph
-	bool sync(Graph graph);
+/// The basic interface for all Graph Adapters
+interface GraphAdapterInterface : GraphInstanceInterface {
+	/// Sync all of the models in graph
+	bool sync();
 
 	/// Return a serialized `GraphValue` from the given model
 	GraphValue serializeToGraphValue(GraphModelInterface model);
+
+	/// Returns true if the adapter handles the given model type
+	bool handles(string modelName);
 }
 
-///
+/// A base class for Graph Adapters
 class GraphAdapter(Models ...) : GraphAdapterInterface {
+	mixin GraphInstanceImplementation;
+	/// Access the Graph instance associated with this adapter
+	@property Graph graph() { return _graph; }
+
 	/// Return the name of the container to be used for the given modelName
-	string containerNameFor(string typeName) {
-		import aura.util.string_transforms;
-		return typeName.snakeCase;
+	/// by default this returns the typename verbatim. This method can be overridden to return custom containerNames
+	static string containerNameFor(string typeName) {
+		return typeName;
 	}
 
 	/// Sync all of the models in the given graph
-	bool sync(Graph graph) {
+	bool sync() {
 		return true;
+	}
+
+	/// Returns true if the adapter handles the given model type
+	bool handles(string modelName) {
+		foreach(model; Models) { 
+			if (model.stringof == modelName) return true; 
+		}
+		return false;
 	}
 
 	/// Return a serialized `GraphValue` from the given model
@@ -66,12 +80,12 @@ version (unittest) {
 		}
 
 		class MyAdapter : GraphAdapter!(TestVehicle, TestCar) {
-			override string containerNameFor(string typeName) {
+			static string containerNameFor(string typeName) {
 				switch (typeName) {
 					case "TestVehicle":
 						return "vehicles";
 					default:
-						return super.containerNameFor(typeName);
+						return typeName;
 				}
 			}
 		}
@@ -84,8 +98,8 @@ version (unittest) {
 		car.doors = 4;
 		car.id = "TEST-CAR";
 
-		assert (adapter.containerNameFor(car.graphType) == "test_car");
-		assert (adapter.containerNameFor(TestVehicle.stringof) == "vehicles");
+		assert ((cast(MyAdapter)adapter).containerNameFor(car.graphType) == "TestCar");
+		assert ((cast(MyAdapter)adapter).containerNameFor(TestVehicle.stringof) == "vehicles");
 
 		auto serializedCar = adapter.serializeToGraphValue(cast(GraphModelInterface)car);
 		assertThrown!AssertError(adapter.serializeToGraphValue(cast(GraphModelInterface)bike));
