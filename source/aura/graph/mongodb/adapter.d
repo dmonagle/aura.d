@@ -34,11 +34,11 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 		return client.getDatabase(databaseName);
 	}
 
-	static MongoCollection getCollection(string modelType) {
+	MongoCollection getCollection(string modelType) {
 		return client.getCollection(collectionPath(modelType));
 	}
 	
-	static MongoCollection getCollection(ModelType)() {
+	MongoCollection getCollection(ModelType)() {
 		return getCollection(ModelType.stringof);
 	}
 
@@ -48,16 +48,16 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 		return database.runCommand(command);
 	}
 	
-	static Bson dropCollection(M : GraphModelInterface)() {
+	Bson dropCollection(M : GraphModelInterface)() {
 		auto name = containerNameFor(M.stringof);
 		return dropCollection(name);
 	}
 	
-	static string collectionPath(string modelType) {
+	string collectionPath(string modelType) {
 		return _databaseName ~ "." ~ containerNameFor(modelType);
 	}
 	
-	static void ensureIndex(M)(int[string] fieldOrders, IndexFlags flags = cast(IndexFlags)0) {
+	void ensureIndex(M)(int[string] fieldOrders, IndexFlags flags = cast(IndexFlags)0) {
 		getCollection!M.ensureIndex(fieldOrders, flags);
 	}
 
@@ -80,7 +80,7 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 	}
 
 	/// Deletes the model from the databaase
-	static bool _delete(M : GraphModelInterface)(M model) {
+	bool _delete(M : GraphModelInterface)(M model) {
 		if (model.graphPersisted) {
 			auto collection = getCollection!M;
 			logDebugV("GraphMongoAdapter: Removing from collection %s: %s", collection.name, model._id);
@@ -90,7 +90,7 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 	}
 
 	/// Saves the model to the database using an insert or upsert, returns false if saving is not necessary
-	static bool _save(M : GraphModelInterface)(M model) {
+	bool _save(M : GraphModelInterface)(M model) {
 		auto collection = getCollection!M;
 		bool result = true; 
 

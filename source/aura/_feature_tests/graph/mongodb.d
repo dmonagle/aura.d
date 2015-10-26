@@ -33,6 +33,15 @@ debug (featureTest) {
 			databaseName = "test_aura_graph";
 			url = "localhost";
 		}
+
+		override string containerNameFor(string typeName) {
+			switch (typeName) {
+				case "TestPet":
+					return "pets";
+				default:
+					return typeName;
+			}
+		}
 	}
 
 	class TestPetGraph : Graph {

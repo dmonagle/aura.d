@@ -12,6 +12,9 @@ import std.format;
 
 /// The basic interface for all Graph Adapters
 interface GraphAdapterInterface : GraphInstanceInterface {
+	/// Return the name of the container to be used for the given modelName
+	string containerNameFor(string modelName);
+
 	/// Sync all of the models in graph
 	bool sync();
 
@@ -30,7 +33,7 @@ class GraphAdapter(Models ...) : GraphAdapterInterface {
 
 	/// Return the name of the container to be used for the given modelName
 	/// by default this returns the typename verbatim. This method can be overridden to return custom containerNames
-	static string containerNameFor(string typeName) {
+	string containerNameFor(string typeName) {
 		return typeName;
 	}
 
@@ -80,7 +83,7 @@ version (unittest) {
 		}
 
 		class MyAdapter : GraphAdapter!(TestVehicle, TestCar) {
-			static string containerNameFor(string typeName) {
+			override string containerNameFor(string typeName) {
 				switch (typeName) {
 					case "TestVehicle":
 						return "vehicles";
