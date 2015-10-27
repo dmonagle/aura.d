@@ -1,13 +1,9 @@
 ﻿module aura.graph.elasticsearch.adapter;
 
-public import elasticsearch.parameters;
-
 import aura.graph.core.model;
 import aura.graph.core.adapter;
 
-import elasticsearch.client;
-import elasticsearch.api.actions.base;
-import elasticsearch.api.actions.indices;
+import elasticsearch;
 
 import vibe.core.log;
 import vibe.inet.url;
@@ -65,7 +61,7 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 		}
 	}
 
-	Json search(M)(string searchBody, Parameters params = Parameters()) {
+	Json search(M)(string searchBody, ESParams params = ESParams()) {
 		params["body"] = searchBody;
 		params["index"] = indexName(containerName!M);
 		if ("type" !in params)
@@ -80,7 +76,7 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 		return response.jsonBody;
 	}
 
-	Json scroll(string scroll_id, Parameters params = Parameters()) {
+	Json scroll(string scroll_id, ESParams params = ESParams()) {
 		params["scroll_id"] = scroll_id;
 		if ("scroll" !in params) params["scroll"] = "1m";
 		if ("size" !in params) params["size"] = "2000";		
@@ -103,7 +99,7 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 
 	/// Removes the model from the database
 	bool remove(M : GraphStateInterface)(M model) {
-		client.delete_([indexName(containerName!M), model.graphState.id]);
+		client.delete_(indexName(containerName!M), model.graphType, model.graphState.id);
 		return true;
 	}
 
