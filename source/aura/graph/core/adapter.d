@@ -23,6 +23,9 @@ interface GraphAdapterInterface : GraphInstanceInterface {
 
 	/// Returns true if the adapter handles the given model type
 	bool handles(string modelName);
+
+	/// Returns models where the given key matches the value.
+	GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit);
 }
 
 /// A base class for Graph Adapters
@@ -60,6 +63,8 @@ class GraphAdapter(Models ...) : GraphAdapterInterface {
 			default: assert(false, format("Type '%s' not supported by adapter", model.graphType));
 		}
 	}
+
+	abstract override GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit);
 }
 
 version (unittest) {
@@ -90,6 +95,10 @@ version (unittest) {
 					default:
 						return typeName;
 				}
+			}
+
+			override GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit) {
+				return [];
 			}
 		}
 

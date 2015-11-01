@@ -127,6 +127,11 @@ debug (featureTest) {
 
 						david._id.valid.shouldBeTrue;
 
+						auto found = graph.find!(TestUser, "firstName")("David");
+						found.shouldBeTrue;
+						f.info("%s", found.serializeToPrettyJson);
+						assert(found is david, "Found should be David, but it is not");
+
 						graph.clearModelStores();
 						auto cursor = mongoAdapter.getCollection!TestUser.find(["_id": david._id]);
 						auto results = mongoAdapter.injectCursor!TestUser(cursor);
@@ -134,6 +139,32 @@ debug (featureTest) {
 
 						auto secondResult = mongoAdapter.find!TestUser(david._id);
 						assert(secondResult is results[0], "The results should be the same instance");
+					});
+				f.scenario("MonogAdapter find for graph", {
+						auto graph = new TestPetGraph;
+						auto results = graph.adapter.find("TestUser", "surname", GraphValue("Monagle"), 1);
+
+						results.length.shouldEqual(1);
+						auto user = cast(TestUser)results[0];
+						user.firstName.shouldEqual("David");
+						user.graphPersisted.shouldBeTrue;
+					});
+				f.scenario("Graph find", {
+						auto graph = new TestPetGraph;
+						auto mongoAdapter = cast(TestMongoDBAdapter)graph.adapter;
+
+						auto result = graph.find!(TestUser, "firstName")("David");
+						result.shouldBeTrue;
+						result.surname.shouldEqual("Monagle");
+						graph.length.shouldEqual(1);
+
+						auto notFound = graph.find!(TestUser, "firstName")("Kevin");
+						notFound.shouldBeFalse;
+
+						auto result2 = graph.find!(TestUser, "firstName")("David");
+						result2.shouldBeTrue;
+						assert(result is result2);
+						graph.length.shouldEqual(1);
 					});
 			});
 	}

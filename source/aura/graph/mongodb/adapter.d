@@ -130,6 +130,20 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 		return result;
 	}
 
+	GraphModelInterface deserialize(string graphType, Bson data) {
+		import std.format;
+
+		switch (graphType) {
+			foreach(ModelType; Models) {
+				case ModelType.stringof:
+				ModelType model;
+				model.deserializeBson(data);
+				return model;
+			}
+			default: assert(false, format("Type '%s' not supported by adapter", graphType));
+		}
+	}
+
 	// Query functions
 
 	/// Injects all results from the `cursor` into the graph. 
@@ -166,6 +180,23 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 
 		return _results;
 	}
+
+	override GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit = 0) {
+		GraphModelInterface[] results;
+
+		auto cursor = getCollection(graphType).find([key: value.toBson]);
+		if (limit) cursor.limit(limit);
+
+		while (!cursor.empty) {
+			auto bson = cursor.front;
+			auto result = deserialize(graphType, bson);
+			result.graphPersisted = true;
+			results ~= result;
+			cursor.popFront;
+		}
+		return results;
+	}
+
 
 	/// Find a single model where the key matches the value
 	M find(M : GraphModelInterface, V)(string key, V value) {

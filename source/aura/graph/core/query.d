@@ -78,6 +78,9 @@ version (unittest) {
 	}
 
 	class TestAdapter : GraphAdapter!(GraphTestUser) {
+		override GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit) {
+			return [];
+		}
 	}
 
 	unittest {
