@@ -5,6 +5,7 @@ debug (featureTest) {
 	import aura.graph.core;
 	import aura.graph.mongodb;
 	import aura.graph.elasticsearch;
+	import aura._feature_tests.graph.features;
 
 	class TestUser : GraphMongoModel {
 		string firstName;
@@ -64,9 +65,6 @@ debug (featureTest) {
 	unittest {
 		feature("Graph store and retrieve", (f) {
 				f.scenario("Create a graph and store models in it", {
-						import vibe.core.log;
-						setLogLevel(LogLevel.debugV);
-
 						f.info("Dropping collections");
 						auto graph = new TestPetGraph;
 						auto mongoAdapter = cast(TestMongoDBAdapter)graph.adapter;
@@ -110,5 +108,33 @@ debug (featureTest) {
 						graph.esIndexer.modelCount.shouldEqual(1);
 					});			
 			}, "graph");
+		feature("Find models using mongodb adapter", (f) {
+				f.scenario("Find a model by id", {
+						import vibe.core.log;
+						setLogLevel(LogLevel.debugV);
+
+						auto graph = new TestPetGraph;
+						auto mongoAdapter = cast(TestMongoDBAdapter)graph.adapter;
+
+						mongoAdapter.dropCollection!TestUser;
+						mongoAdapter.dropCollection!TestPet;
+						
+						graph.adapter.shouldBeTrue;
+						auto david = graph.inject(new TestUser);
+						david.firstName = "David";
+						david.surname = "Monagle";
+						graph.sync.shouldBeTrue;
+
+						david._id.valid.shouldBeTrue;
+
+						graph.clearModelStores();
+						auto cursor = mongoAdapter.getCollection!TestUser.find(["_id": david._id]);
+						auto results = mongoAdapter.injectCursor!TestUser(cursor);
+						results.length.shouldEqual(1);
+
+						auto secondResult = mongoAdapter.find!TestUser(david._id);
+						assert(secondResult is results[0], "The results should be the same instance");
+					});
+			});
 	}
 }

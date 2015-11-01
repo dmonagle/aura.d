@@ -120,6 +120,13 @@ M[] filterModels(M : GraphModelInterface, alias predicate = (m) => true)(Graph g
 	return array(results.map!((m) => cast(M)m));
 }
 
+/// Returns an array of M from within the graph that match the given predicate
+M[] filterModels(M : GraphModelInterface)(Graph graph, bool delegate(M) predicate) {
+	auto results = array(graph.modelStore!M.filter!((m) => predicate(cast(M)m)));
+	return array(results.map!((m) => cast(M)m));
+}
+
+
 version (unittest) {
 	class TestGraphModel : GraphModelInterface {
 		mixin GraphModelImplementation;

@@ -182,6 +182,7 @@ version (unittest) {
 
 alias GraphModelStore = GraphModelInterface[];
 
+/// Mixes in functionality 
 mixin template GraphModelStoreImplementation() {
 	/// Returns the modelStore for the given model type
 	ref GraphModelStore modelStore(string storeName) {
@@ -199,6 +200,11 @@ mixin template GraphModelStoreImplementation() {
 	/// ditto
 	ref GraphModelStore modelStore(M)() {
 		return modelStore(M.stringof);
+	}
+
+	/// Clears all data from the modelStores
+	void clearModelStores() {
+		_graphModelStores = GraphModelStore[string].init;
 	}
 
 

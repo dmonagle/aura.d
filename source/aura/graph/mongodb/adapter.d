@@ -61,6 +61,7 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 		getCollection!M.ensureIndex(fieldOrders, flags);
 	}
 
+	/// Sync models in the graph with the database
 	override bool sync() {
 		foreach(M; Models) {
 			foreach(m; graph.modelStore!M) {
@@ -127,6 +128,59 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 		model.takeSnapshot;
 
 		return result;
+	}
+
+	// Query functions
+
+	/// Injects all results from the `cursor` into the graph. 
+	M[] injectCursor(M : GraphModelInterface, C)(C cursor, bool merge = false) 
+	in {
+		assert(graph);
+	}
+	body {
+		M[] _results;
+
+		while (!cursor.empty) {
+			M model;
+			auto bsonModel = cursor.front;
+
+			auto existingModels = graph.filterModels!(M, (m) => (cast(M)m)._id == bsonModel["_id"].get!BsonObjectID);
+			if (existingModels.length) {
+				// Use merge strategy to update the existing model
+				if (merge) {
+					assert(false, "This is not implemented yet");
+				}
+				else {
+					_results ~= existingModels[0];
+				}
+			}
+			else {
+				// Create and deserialize a new model
+				M newModel = new M();
+				newModel.deserializeBson(bsonModel);
+				newModel.graphPersisted = true;
+				_results ~= graph.inject(newModel);
+			}
+			cursor.popFront;
+		}
+
+		return _results;
+	}
+
+	/// Find a single model where the key matches the value
+	M find(M : GraphModelInterface, V)(string key, V value) {
+		if (key == "") key = "_id";
+		static if (is(V == Bson)) auto searchValue = value;
+		else auto searchValue = Bson(value);
+		auto cursor = getCollection!M.find([key: value]);
+		cursor.limit(1);
+		auto results = injectCursor!M(cursor);
+		if (results.length) return results[0];
+		return null;
+	}
+	
+	M find(M : GraphModelInterface, V)(V id) {
+		return find!M("_id", id);
 	}
 
 private:
