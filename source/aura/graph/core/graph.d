@@ -116,7 +116,7 @@ class Graph {
 		if (graphResults.length) return graphResults[0];
 		
 		if (adapter) {
-			auto adapterResults = adapter.find(M.stringof, key, value, 1);
+			auto adapterResults = adapter.graphFind(M.stringof, key, value, 1);
 			if (adapterResults.length) return inject!M(cast(M)adapterResults[0]);
 		}
 		
@@ -162,7 +162,9 @@ M[] filterModels(M : GraphModelInterface, string key, V)(Graph graph, V value) {
 version (unittest) {
 	class TestGraphModel : GraphModelInterface {
 		mixin GraphModelImplementation;
-		
+		override @property string graphId() const { return id; }
+		override @property void graphId(string newId) { id = newId; }
+
 		string id;
 	}
 	

@@ -15,7 +15,9 @@ import vibe.db.mongo.mongo;
 import vibe.core.log;
 
 
-class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
+class GraphMongoAdapter(M ...) : GraphAdapter!M {
+	alias Models = M;
+
 	static @property ref string databaseName() { return _databaseName; }
 	static @property ref string url() { return _url; }
 
@@ -56,10 +58,16 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 	string collectionPath(string modelType) {
 		return _databaseName ~ "." ~ containerNameFor(modelType);
 	}
-	
+
+	void ensureIndex(M)(scope const(Tuple!(string, int))[] fieldOrders, IndexFlags flags = cast(IndexFlags)0) {
+		getCollection!M.ensureIndex(fieldOrders, flags);
+	}
+
+	/*
 	void ensureIndex(M)(int[string] fieldOrders, IndexFlags flags = cast(IndexFlags)0) {
 		getCollection!M.ensureIndex(fieldOrders, flags);
 	}
+	*/
 
 	/// Sync models in the graph with the database
 	override bool sync() {
@@ -173,7 +181,7 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 				M newModel = new M();
 				newModel.deserializeBson(bsonModel);
 				newModel.graphPersisted = true;
-				_results ~= graph.inject(newModel);
+				_results ~= graph.inject(newModel, true);
 			}
 			cursor.popFront;
 		}
@@ -181,7 +189,7 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 		return _results;
 	}
 
-	override GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit = 0) {
+	override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit = 0) {
 		GraphModelInterface[] results;
 
 		auto cursor = getCollection(graphType).find([key: value.toBson]);
@@ -197,8 +205,18 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 		return results;
 	}
 
+	/// Runs a query for the given model type and returns the MongoCursor
+	auto findCursor(M : GraphModelInterface, T)(T query) {
+		return getCollection!M.find(query);
+	}
+
+	/// Runs a query for all items in the collection specified by M and returns a MongoCursor
+	auto findCursor(M : GraphModelInterface)() {
+		return getCollection!M.find();
+	}
 
 	/// Find a single model where the key matches the value
+	/// The result is injected into the graph. If the result already exists in the graph, it will return the graph value
 	M find(M : GraphModelInterface, V)(string key, V value) {
 		if (key == "") key = "_id";
 		static if (is(V == Bson)) auto searchValue = value;
@@ -209,7 +227,8 @@ class GraphMongoAdapter(Models ...) : GraphAdapter!Models {
 		if (results.length) return results[0];
 		return null;
 	}
-	
+
+	/// ditto
 	M find(M : GraphModelInterface, V)(V id) {
 		return find!M("_id", id);
 	}

@@ -29,13 +29,6 @@ debug (featureTest) {
 	class TestNotStoredModel : GraphMongoModel {
 	}
 
-	class ElasticSearchIndexer : ElasticsearchIndexProxy!(TestUser, TestPet) {
-		static this() {
-			hosts = ["http://127.0.0.1:9200"];
-			prefix = "test_aura_graph_";
-		}
-	}
-
 	class TestMongoDBAdapter : GraphMongoAdapter!(TestUser, TestPet) {
 		static this() {
 			databaseName = "test_aura_graph";
@@ -55,11 +48,7 @@ debug (featureTest) {
 	class TestPetGraph : Graph {
 		this() {
 			adapter = new TestMongoDBAdapter;
-			esIndexer = new ElasticSearchIndexer;
-			registerGraphEventListener(esIndexer);
 		}
-
-		ElasticSearchIndexer esIndexer;
 	}
 
 	unittest {
@@ -100,12 +89,8 @@ debug (featureTest) {
 						mia.color = "Black";
 						graph.sync.shouldBeTrue();
 
-						graph.esIndexer.modelCount.shouldEqual(2);
-
 						mia.graphDelete;
 						graph.sync.shouldBeTrue();
-
-						graph.esIndexer.modelCount.shouldEqual(1);
 					});			
 			}, "graph");
 		feature("Find models using mongodb adapter", (f) {
@@ -142,7 +127,7 @@ debug (featureTest) {
 					});
 				f.scenario("MonogAdapter find for graph", {
 						auto graph = new TestPetGraph;
-						auto results = graph.adapter.find("TestUser", "surname", GraphValue("Monagle"), 1);
+						auto results = graph.adapter.graphFind("TestUser", "surname", GraphValue("Monagle"), 1);
 
 						results.length.shouldEqual(1);
 						auto user = cast(TestUser)results[0];

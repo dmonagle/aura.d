@@ -75,10 +75,14 @@ version (unittest) {
 		
 		string id;
 		string name;
+
+		override @property string graphId() const { return id; }
+		override @property void graphId(string newId) { id = newId; }
+
 	}
 
 	class TestAdapter : GraphAdapter!(GraphTestUser) {
-		override GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit) {
+		override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit) {
 			return [];
 		}
 	}

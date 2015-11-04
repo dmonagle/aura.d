@@ -9,6 +9,7 @@ module aura.graph.core.adapter;
 
 import aura.graph.core;
 import std.format;
+import std.typetuple;
 
 /// The basic interface for all Graph Adapters
 interface GraphAdapterInterface : GraphInstanceInterface {
@@ -25,7 +26,8 @@ interface GraphAdapterInterface : GraphInstanceInterface {
 	bool handles(string modelName);
 
 	/// Returns models where the given key matches the value.
-	GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit);
+	/// This is a utility function used by Graph and the function implementation does not have do any Graph manipulation
+	GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit);
 }
 
 /// A base class for Graph Adapters
@@ -53,6 +55,10 @@ class GraphAdapter(Models ...) : GraphAdapterInterface {
 		return false;
 	}
 
+	template handles(M) {
+		enum handles = staticIndexOf!(M, TypeTuple!Models) != -1;
+	}
+
 	/// Return a serialized `GraphValue` from the given model
 	GraphValue serializeToGraphValue(GraphModelInterface model) {
 		switch (model.graphType) {
@@ -64,7 +70,7 @@ class GraphAdapter(Models ...) : GraphAdapterInterface {
 		}
 	}
 
-	abstract override GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit);
+	abstract override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit);
 }
 
 version (unittest) {
@@ -74,7 +80,11 @@ version (unittest) {
 
 		class TestVehicle : GraphModelInterface {
 			mixin GraphModelImplementation;
-			
+			string _id;
+
+			override @property string graphId() const { return _id; }
+			override @property void graphId(string newId) { _id = newId; }
+
 			string id;
 			int wheels;
 		}
@@ -97,7 +107,7 @@ version (unittest) {
 				}
 			}
 
-			override GraphModelInterface[] find(string graphType, string key, GraphValue value, uint limit) {
+			override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit) {
 				return [];
 			}
 		}

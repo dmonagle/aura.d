@@ -39,6 +39,9 @@ mixin template GraphTypeProperty() {
 interface GraphModelInterface : GraphInstanceInterface {
 	@property string graphType() const;
 
+	@property string graphId() const;
+	@property void graphId(string);
+
 	/// Returns true if the model has been persisted to it's primary storage
 	@property bool graphPersisted() const;
 	@property void graphPersisted(bool value);
@@ -109,6 +112,9 @@ private:
 /// Default impolementation of GraphModelInterface
 class GraphModel : GraphModelInterface {
 	mixin GraphModelImplementation;
+
+	override abstract @property string graphId() const;
+	override abstract @property void graphId(string);
 }
 
 /// Copy the serializable attributes from source to destination
@@ -162,11 +168,15 @@ body {
 version (unittest) {
 	class Person : GraphModelInterface {
 		mixin GraphModelImplementation;
-		
+
+		string _id;
 		string firstName;
 		string surname;
 		int age;
 		double wage;
+
+		override @property string graphId() const { return _id; }
+		override @property void graphId(string newId) { _id = newId; }
 	}
 	
 	unittest {
