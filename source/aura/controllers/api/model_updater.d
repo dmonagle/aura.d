@@ -61,7 +61,7 @@ class ModelUpdater(S) {
 			static if (is(S.DataType : GraphStateInterface)) {
 				model.graphState = _serializer.data.graphState;
 				if (_serializer.data.graphInstance) {
-					_serializer.data.graphInstance.inject(model);
+					_serializer.data.graphInstance.inject(model, true);
 				}
 				model.graphTouch;
 			}
