@@ -89,11 +89,19 @@ class Graph(A ...) {
 			})(model);
 	}
 
-	M inject(M : ModelInterface)(M model) {
+	/// Inject a model into the graph. If it already exists it will return the existing model unless replace is true
+	M inject(M : ModelInterface)(M model, bool replace = false) {
 		assert(model, "Passed in a null model to inject!");
 		if (!model.graphState.validId) {
 			if (auto adapter = adapterFor!M) {
 				adapter.ensureId(model);
+			}
+		}
+		else {
+			if (!replace) {
+				if (auto existing = modelStore!M.get!M(model.graphId)) {
+					model = existing;
+				}
 			}
 		}
 		ensureGraphReferences(model);
@@ -246,11 +254,15 @@ class Graph(A ...) {
 	}
 
 	M[] findMany(M : ModelInterface, V)(string key, V value, uint limit = 0) {
-		auto results = _findMany!M(key, value, limit);
-		inject(results);
+		M[] results;
+		auto adapterResults = _findMany!M(key, value, limit);
+		foreach(result; adapterResults) {
+			results ~= inject(result);
+		}
 		return results;
 	}
 
+	/// Syncs an individual model without a graph instance
 	static bool _sync(M)(M model) {
 		import colorize;
 
@@ -258,12 +270,16 @@ class Graph(A ...) {
 
 		if (model.graphState.deleted) {
 			logDebugV("Graph is going to delete %s: %s".color(fg.light_red), M.stringof, model.graphState.id);
-			eachAdapterFor!(GraphType, M, (a) { if (!a.remove(model)) result = false;} );
+			eachAdapterFor!(GraphType, M, (a) { 
+					if (!a.remove(model)) result = false;
+				});
 			if (result) model.graphState.persisted = false;
 		}
 		else {
 			logDebugV("Graph is going to save %s: %s".color(fg.light_green), M.stringof, model.graphState.id);
-			eachAdapterFor!(GraphType, M, (a) { if (!a.save(model)) result = false;} );
+			eachAdapterFor!(GraphType, M, (a) { 
+					if (!a.save(model)) result = false;
+				});
 			if (result) model.graphState.persisted = true;
 		}
 
@@ -274,33 +290,45 @@ class Graph(A ...) {
 		return result;
 	}
 
+	/// Syncs an individual model
 	bool sync(M)(M model) {
 		// Inject this model if it doesn't have a valid graph Id
 		if (!model.graphState.validId) inject(model);
 
-		bool result = _sync(model);
-
-		if (result) {
+		if (_sync(model)) {
 			if (model.graphState.deleted) {
 				modelStore!M.remove(model);
 			}
+			return true;
 		}
 
+		return false;
+	}
+
+	/// Syncs the specified `GraphModelStore` store
+	bool sync(M)(GraphModelStore store) 
+	in {
+		assert(store);
+	}
+	body {
+		bool result = true;
+
+		logDebug("Graph is syncing model %s, %s/%s records", M.stringof, store.pendingSync.length, store.length);
+		foreach(record; store.pendingSync) {
+			auto model = cast(M)record;
+			if (!sync(model)) result = false;
+		}
 		return result;
 	}
 
+	/// Syncs all model stores
 	bool sync() {
 		bool result = true;
 
 		foreach(index, M; ModelTypes) {
 			auto store = _modelStores[index];
 			if (store) {
-				if (store.pendingSync.length) {
-					foreach(record; store.pendingSync) {
-						auto model = cast(M)record;
-						sync(model);
-					}
-				}
+				if (!sync!M(store)) result = false;
 			}
 		}
 

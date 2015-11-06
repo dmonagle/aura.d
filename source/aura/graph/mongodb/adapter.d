@@ -145,7 +145,7 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 			logDebugV("Upserting %s into collection %s: %s", model.graphState.id, cName, bsonModel.toString);
 			collection.update(["_id": bsonModel["_id"]], bsonModel, UpdateFlags.Upsert);
 		}
-		
+
 		return true;
 	}
 

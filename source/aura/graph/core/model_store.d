@@ -20,6 +20,11 @@ class GraphModelStore {
 	}
 	
 
+	@property auto length() {
+		if ("" !in _store) return 0;
+		return _store[""].length;
+	}
+	
 	@property bool empty() const {
 		if ("" !in _store) return true;
 		if (_store[""].length == 0) return true;
