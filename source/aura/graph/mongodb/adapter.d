@@ -155,7 +155,7 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 	// Query functions
 
 	/// Injects all results from the `cursor` into the graph. 
-	M[] injectCursor(M : GraphModelInterface, C)(C cursor, bool merge = false) 
+	M[] injectCursor(M : GraphModelInterface, C)(C cursor, bool snapshot = true, bool merge = false) 
 	in {
 		assert(graph);
 	}
@@ -181,7 +181,7 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 				M newModel = new M();
 				newModel.deserializeBson(bsonModel);
 				newModel.graphPersisted = true;
-				_results ~= graph.inject(newModel, true);
+				_results ~= graph.inject(newModel, snapshot);
 			}
 			cursor.popFront;
 		}
