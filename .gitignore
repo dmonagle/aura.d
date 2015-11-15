@@ -7,3 +7,4 @@ libaura-d.a
 __test__aura-d__
 **/.DS_Store
 dub.userprefs
+dub.selections.json
