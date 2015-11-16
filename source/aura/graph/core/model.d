@@ -218,6 +218,13 @@ mixin template GraphModelStoreImplementation() {
 		_graphModelStores = GraphModelStore[string].init;
 	}
 
+	/// Clears the modelStore for the given model
+	void clearModelStore(M)() {
+		if (storeName in _graphModelStores) {
+			_graphModelStores[storeName] = GraphModelStore.init;
+		}
+	}
+
 
 private:
 	GraphModelStore[string] _graphModelStores;

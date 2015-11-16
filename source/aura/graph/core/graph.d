@@ -46,6 +46,7 @@ class Graph {
 	
 	/// Injects a model into the graph, optionally initiating a snapshot
 	/// If the model already exists in the graph, the original is returned unless replace is true
+	/// A snapshot is only taken if the model does not already exist in the graph
 	M inject(M : GraphModelInterface)(M model, bool snapshot = false, bool replace = false, string file = __FILE__, typeof(__LINE__) line = __LINE__) 
 	in {
 		assert(model, format("An attempt to inject a null %s into the graph was made %s(%s)", M.stringof, file, line));
@@ -55,18 +56,22 @@ class Graph {
 		bool addToStore = true;
 
 		if (model.graph !is this) {
-			if (model.graphId.length && !replace) { // A model can only preexist if it has a graphId
+			if (model.graphPersisted && !replace) { // A model can only preexist if it has been persisted
 				if (auto existing = firstModel!(M, (m) => m.graphId == model.graphId)(this)) {
 					model = existing;
 					addToStore = false; // Don't add to store as the existing one will be returned
 				}
 			}
+
 			if (addToStore) {
 				modelStore!(M).addModel(model);
 				ensureGraphReferences(model);
 			}
+
 			if (snapshot) model.takeSnapshot;
 		}
+
+
 		return model;
 	}
 	
@@ -111,7 +116,15 @@ class Graph {
 		emitGraphDidSync;
 		return result;
 	}
-	
+
+	/// Clears all of the data stored in the graph whether it is persisted or not
+	alias clear = clearModelStores;
+
+	/// Clears all of the given model type
+	void clear(M)() {
+		clearModelStore!M;
+	}
+
 	/// Registers a listener with this graph
 	void registerGraphEventListener(GraphEventListener listener) {
 		if (!_graphEventListeners.canFind(listener)) {
