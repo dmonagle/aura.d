@@ -18,11 +18,16 @@ import vibe.data.serialization;
 import std.algorithm;
 import std.array;
 import std.traits;
+import std.format;
 
 /// Exposes a graphInstance property
 interface GraphInstanceInterface {
-	@property inout(Graph) graph() inout;
+	@ignore @property inout(Graph) graph() inout;
 	@property void graph(Graph value);
+
+	@ignore deprecated final @property inout(Graph) graphInstance() inout { return graph; }
+	deprecated final @property void graphInstance(Graph value) { graph(value); }
+
 }
 
 
@@ -40,14 +45,26 @@ class Graph {
 	mixin GraphModelStoreImplementation;
 	
 	/// Injects a model into the graph, optionally initiating a snapshot
-	M inject(M : GraphModelInterface)(M model, bool snapshot = false) 
+	/// If the model already exists in the graph, the original is returned unless replace is true
+	M inject(M : GraphModelInterface)(M model, bool snapshot = false, bool replace = false, string file = __FILE__, typeof(__LINE__) line = __LINE__) 
 	in {
+		assert(model, format("An attempt to inject a null %s into the graph was made %s(%s)", M.stringof, file, line));
 		assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
 	}
 	body {
+		bool addToStore = true;
+
 		if (model.graph !is this) {
-			ensureGraphReferences(model);
-			modelStore!(M).addModel(model);
+			if (!replace) {
+				if (auto existing = firstModel!(M, (m) => m.graphId == model.graphId)(this)) {
+					model = existing;
+					addToStore = false; // Don't add to store as the existing one will be returned
+				}
+			}
+			if (addToStore) {
+				modelStore!(M).addModel(model);
+				ensureGraphReferences(model);
+			}
 		}
 		if (snapshot) model.takeSnapshot;
 		return model;
@@ -95,7 +112,7 @@ class Graph {
 		return result;
 	}
 	
-	/// Registers the listener with this graph
+	/// Registers a listener with this graph
 	void registerGraphEventListener(GraphEventListener listener) {
 		if (!_graphEventListeners.canFind(listener)) {
 			_graphEventListeners ~= listener;
@@ -103,14 +120,17 @@ class Graph {
 		}
 	}
 	
-	/// Registers the listener with this graph
+	/// Unregisters the listener with this graph
 	void unregisterGraphEventListener(GraphEventListener listener) {
 		_graphEventListeners = array(_graphEventListeners.filter!((l) => listener !is l));
 	}
 	
 	// Query methods
 
-	/// Used for keys that should be primary within the adapter
+	/// Searches for a model with the matching key and value and returns it
+	/// This will return the first model that matches, if no models match, the adapter (if set) will be used to perform the search
+	/// any result will be injected into the graph and returned. If no result is found, null is returned.
+	/// This function is best used for keys that are considered "primary" in their collections.
 	M find(M, string key, V : GraphValue)(V value) {
 		auto graphResults = this.filterModels!(M, key)(value);
 		if (graphResults.length) return graphResults[0];
@@ -128,6 +148,22 @@ class Graph {
 		return find!(M, key)(GraphValue(value));
 	}
 
+	/// Searches for models with the given key and value.
+	/// Unlike the find method, the adapter, if set,  is always consulted, each match is checked to see if it already exists in the graph.
+	/// If a model exists and replace is false, then the original model is returned, otherwise it is replaced in the graph with the
+	/// version returned from the adapter.
+	/// If no adapter is set, this just returns all matching models already in the graph
+	M[] findMany(M, string key, V)(V value, uint limit = 0, bool snapshot = true, bool replace = false) {
+		M[] results;
+		if (adapter) {
+			auto adapterResults = adapter.graphFind(M.stringof, key, value, limit);
+			foreach(result; adapterResults) {
+				results ~= inject(result);
+			}
+		}
+		return results;
+	}
+
 	// Emit methods
 	void emitGraphWillSync() { foreach(listener; _graphEventListeners) listener.graphWillSync(); }
 	void emitModelWillSave(GraphModelInterface model) { foreach(listener; _graphEventListeners) listener.modelWillSave(model); }
@@ -141,17 +177,26 @@ private:
 	GraphEventListener[] _graphEventListeners;
 }
 
+/// Returns the first model that matches the predicate. Else returns null
+M firstModel(M : GraphModelInterface, alias predicate = (m) => true)(Graph graph) {
+	auto result = graph.modelStore!M.find!((m) => predicate(cast(M)m));
+	if (!result.length) return null;
+	return cast(M)result.front;
+}
+
 /// Returns an array of M from within the graph that match the given predicate
 M[] filterModels(M : GraphModelInterface, alias predicate = (m) => true)(Graph graph) {
 	auto results = array(graph.modelStore!M.filter!((m) => predicate(cast(M)m)));
 	return array(results.map!((m) => cast(M)m));
 }
 
+/*
 /// Returns an array of M from within the graph that match the given predicate
 M[] filterModels(M : GraphModelInterface)(Graph graph, bool delegate(M) predicate) {
 	auto results = array(graph.modelStore!M.filter!((m) => predicate(cast(M)m)));
 	return array(results.map!((m) => cast(M)m));
 }
+*/
 
 /// Returns an array of M from within the graph where key matches value
 M[] filterModels(M : GraphModelInterface, string key, V)(Graph graph, V value) {

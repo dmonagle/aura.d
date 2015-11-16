@@ -39,6 +39,7 @@ mixin template GraphTypeProperty() {
 interface GraphModelInterface : GraphInstanceInterface {
 	@property string graphType() const;
 
+	/// Returns a unique string depicting this model
 	@property string graphId() const;
 	@property void graphId(string);
 
@@ -192,7 +193,7 @@ version (unittest) {
 
 alias GraphModelStore = GraphModelInterface[];
 
-/// Mixes in functionality 
+/// Mixes in modelStore functionality 
 mixin template GraphModelStoreImplementation() {
 	/// Returns the modelStore for the given model type
 	ref GraphModelStore modelStore(string storeName) {

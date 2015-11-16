@@ -11,13 +11,15 @@ import aura.graph.core.model;
 import vibe.data.bson;
 
 class GraphMongoModel : GraphModel {
-	override @optional @property string graphId() const { return _id.toString; }
-	override @ignore @optional @property void graphId(string newId) { _id = BsonObjectID.fromString(newId); }
+	@optional {
+		override @ignore @property string graphId() const { return _id.toString; }
+		override @property void graphId(string newId) { _id = BsonObjectID.fromString(newId); }
 
-	@property BsonObjectID _id() const { return _modelId; }
-	@property void _id(BsonObjectID value) { 
-		_modelId = value;
-		graphPersisted = _modelId.valid;
+		@property BsonObjectID _id() const { return _modelId; }
+		@property void _id(BsonObjectID value) { 
+			_modelId = value;
+			graphPersisted = _modelId.valid;
+		}
 	}
 
 	void ensureId() {
