@@ -55,7 +55,7 @@ class Graph {
 		bool addToStore = true;
 
 		if (model.graph !is this) {
-			if (!replace) {
+			if (model.graphId.length && !replace) { // A model can only preexist if it has a graphId
 				if (auto existing = firstModel!(M, (m) => m.graphId == model.graphId)(this)) {
 					model = existing;
 					addToStore = false; // Don't add to store as the existing one will be returned
@@ -65,8 +65,8 @@ class Graph {
 				modelStore!(M).addModel(model);
 				ensureGraphReferences(model);
 			}
+			if (snapshot) model.takeSnapshot;
 		}
-		if (snapshot) model.takeSnapshot;
 		return model;
 	}
 	
@@ -154,14 +154,14 @@ class Graph {
 	/// version returned from the adapter.
 	/// If no adapter is set, this just returns all matching models already in the graph
 	M[] findMany(M, string key, V)(V value, uint limit = 0, bool snapshot = true, bool replace = false) {
-		M[] results;
 		if (adapter) {
 			auto adapterResults = adapter.graphFind(M.stringof, key, value, limit);
 			foreach(result; adapterResults) {
-				results ~= inject(result);
+				inject(result, snapshot, replace); 
 			}
 		}
-		return results;
+
+		return filterModels!(M, key)(this, value);
 	}
 
 	// Emit methods
@@ -265,7 +265,7 @@ version (unittest) {
 		assert(david.graphHasSnapshot);
 		
 		assert(!ginny.graphHasSnapshot);
-		graph.inject(ginny, true); // Take a snapshot
+		ginny.takeSnapshot; // Take a snapshot
 		ginny.title = "Mrs";
 		assert(ginny.graphSnapshot["title"] == "Miss");
 		auto oldGinny = ginny;

@@ -15,6 +15,7 @@ import std.bigint;
 import std.datetime : Date, SysTime;
 import std.conv;
 import std.traits;
+import std.format;
 
 
 import std.typetuple;
@@ -179,7 +180,7 @@ struct GraphValue {
 
 	ref inout(GraphValue) opIndex(string key, string file = __FILE__, typeof(__LINE__) line = __LINE__) inout
 	{
-		enforce(isObject, "not an object");
+		enforce(isObject, format("GraphValue is not an object. Attempted index of key %s called from %s(%s)", key, file, line));
 		auto asObject = value.peek!(Object);
 		enforce(key in (*asObject), "Key not present in GraphValue Object: " ~ key ~ ". (" ~ file ~ ":" ~ line.to!string ~")");
 		return (*asObject)[key];

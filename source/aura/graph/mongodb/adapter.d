@@ -166,14 +166,14 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 			M model;
 			auto bsonModel = cursor.front;
 
-			auto existingModels = graph.filterModels!(M, (m) => (cast(M)m)._id == bsonModel["_id"].get!BsonObjectID);
-			if (existingModels.length) {
+			auto existingModel = graph.firstModel!(M, (m) => (cast(M)m)._id == bsonModel["_id"].get!BsonObjectID);
+			if (existingModel) {
 				// Use merge strategy to update the existing model
 				if (merge) {
-					assert(false, "This is not implemented yet");
+					enforce(false, "This is not implemented yet");
 				}
 				else {
-					_results ~= existingModels[0];
+					_results ~= existingModel;
 				}
 			}
 			else {
