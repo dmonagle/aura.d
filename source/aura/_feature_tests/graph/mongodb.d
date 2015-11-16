@@ -95,9 +95,6 @@ debug (featureTest) {
 			}, "graph");
 		feature("Find models using mongodb adapter", (f) {
 				f.scenario("Find a model by id", {
-						import vibe.core.log;
-						setLogLevel(LogLevel.debugV);
-
 						auto graph = new TestPetGraph;
 						auto mongoAdapter = cast(TestMongoDBAdapter)graph.adapter;
 
