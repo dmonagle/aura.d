@@ -23,6 +23,7 @@ Bson toBson(const GraphValue value) {
 		return bson;
 	}
 
+	if (value.type ==typeid(BsonObjectID)) return Bson(value.get!(BsonObjectID));
 	foreach(Type; TypeTuple!(bool, double, int, long, string)) {
 		if (value.type ==typeid(Type)) return Bson(value.get!Type);
 	}
@@ -78,4 +79,12 @@ unittest {
 	// Object Test
 	auto bsonObject = object.toBson;
 	assert (bsonObject.type == Bson.Type.object);
+}
+
+// Test BsonObjectId comparison
+unittest {
+	auto bsonId = BsonObjectID.generate;
+	auto graphId = GraphValue(bsonId);
+
+	assert(bsonId == graphId);
 }

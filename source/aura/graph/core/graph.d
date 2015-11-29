@@ -66,11 +66,9 @@ class Graph {
 			if (addToStore) {
 				modelStore!(M).addModel(model);
 				ensureGraphReferences(model);
+				if (snapshot) model.takeSnapshot;
 			}
-
-			if (snapshot) model.takeSnapshot;
 		}
-
 
 		return model;
 	}
@@ -166,16 +164,22 @@ class Graph {
 	/// If a model exists and replace is false, then the original model is returned, otherwise it is replaced in the graph with the
 	/// version returned from the adapter.
 	/// If no adapter is set, this just returns all matching models already in the graph
-	M[] findMany(M, string key, V)(V value, uint limit = 0, bool snapshot = true, bool replace = false) {
+	M[] findMany(M, string key, V : GraphValue)(V value, uint limit = 0, bool snapshot = true, bool replace = false) {
 		if (adapter) {
 			auto adapterResults = adapter.graphFind(M.stringof, key, value, limit);
 			foreach(result; adapterResults) {
-				inject(result, snapshot, replace); 
+				inject(cast(M)result, snapshot, replace); 
 			}
 		}
 
 		return filterModels!(M, key)(this, value);
 	}
+
+	/// Ditto
+	M[] findMany(M, string key, V)(V value, uint limit = 0, bool snapshot = true, bool replace = false) {
+		return findMany!(M, key)(GraphValue(value));
+	}
+
 
 	// Emit methods
 	void emitGraphWillSync() { foreach(listener; _graphEventListeners) listener.graphWillSync(); }

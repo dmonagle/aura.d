@@ -17,6 +17,7 @@ import std.conv;
 import std.traits;
 import std.format;
 
+import aura.data.bson;
 
 import std.typetuple;
 
@@ -30,6 +31,7 @@ alias GraphBasicTypes = TypeTuple!(
 	string,
 	Date,
 	SysTime,
+	BsonObjectID
 	);
 
 /**

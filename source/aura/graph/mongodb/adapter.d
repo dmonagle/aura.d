@@ -155,7 +155,7 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 	// Query functions
 
 	/// Injects all results from the `cursor` into the graph. 
-	M[] injectCursor(M : GraphModelInterface, C)(C cursor, bool snapshot = true, bool merge = false) 
+	M[] injectCursor(M : GraphModelInterface, C)(C cursor, bool snapshot = true) 
 	in {
 		assert(graph);
 	}
@@ -166,23 +166,13 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 			M model;
 			auto bsonModel = cursor.front;
 
-			auto existingModel = graph.firstModel!(M, (m) => (cast(M)m)._id == bsonModel["_id"].get!BsonObjectID);
-			if (existingModel) {
-				// Use merge strategy to update the existing model
-				if (merge) {
-					enforce(false, "This is not implemented yet");
-				}
-				else {
-					_results ~= existingModel;
-				}
-			}
-			else {
-				// Create and deserialize a new model
-				M newModel = new M();
-				newModel.deserializeBson(bsonModel);
-				newModel.graphPersisted = true;
-				_results ~= graph.inject(newModel, snapshot);
-			}
+			// Create and deserialize a new model
+			// graph.inject takes care of not reinserting an existing model
+			M newModel = new M();
+			newModel.deserializeBson(bsonModel);
+			newModel.graphPersisted = true;
+			_results ~= graph.inject(newModel, snapshot);
+
 			cursor.popFront;
 		}
 
@@ -192,7 +182,9 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 	override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit = 0) {
 		GraphModelInterface[] results;
 
-		auto cursor = getCollection(graphType).find([key: value.toBson]);
+		auto query = [key: value.toBson];
+		logDebugV(`Graph MongoDB %s:.find(%s: %s(%s))`, containerNameFor(graphType), key, value, value.type);
+		auto cursor = getCollection(graphType).find();
 		if (limit) cursor.limit(limit);
 
 		while (!cursor.empty) {
