@@ -3,6 +3,8 @@
 import aura.graph.serialization;
 
 import std.typetuple;
+import std.traits;
+import aura.util.null_bool;
 
 struct GraphEmbeddedAttribute {
 }
