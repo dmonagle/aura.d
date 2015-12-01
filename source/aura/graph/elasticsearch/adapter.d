@@ -92,7 +92,9 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 		else {
 			auto json = model.serializeToJson;
 		}
-		
+
+		json.remove("_type");
+		json.remove("_id");
 		client.index(indexName(containerName!M), model.graphType, model.graphState.id, json.toString);
 		return true;
 	}
