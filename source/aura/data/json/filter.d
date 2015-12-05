@@ -148,3 +148,48 @@ unittest {
 	
 	assert(model.retail == 5000);
 }
+
+/// Removes any keys from the Json struct that don't meet the keyFilter requirement
+void filterKeys(alias keyFilter = (string[]) => true)(ref Json original, string[] path = []) {
+	switch(original.type) {
+		case Json.Type.object: 
+			foreach(string key, value; original) {
+				auto pathKey = path ~ key;
+				if (!keyFilter(pathKey)) original.remove(key);
+				else filterKeys!(keyFilter)(value, pathKey);
+			}
+			break;
+			
+		case Json.Type.array: 
+			foreach(ulong index, value; original) {
+				auto pathKey = path ~ index.to!string;
+				filterKeys!(keyFilter)(value, pathKey);
+			}
+			break;
+
+		default: {}
+	}
+}
+
+unittest {
+	auto testJson = `
+		{
+			"name": "hello",
+			"score": 10,
+			"subjects": [
+				{
+					"name": "Math",
+					"score": 9
+				},
+				{
+					"name": "IT",
+					"score": 10
+				}
+			]
+		}
+	`.parseJsonString;
+
+	testJson.filterKeys!((key) { 
+			return key[$ - 1] != "score";
+		});
+}
