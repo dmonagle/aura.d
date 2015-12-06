@@ -1,6 +1,7 @@
 ﻿module aura.data.json.util;
 
 public import vibe.data.json;
+import aura.data.json.safe_deserialize;
 
 // Wraps the Json content in a new Json object with the specified key
 Json wrap(Json content, string key) {
