@@ -12,8 +12,10 @@ Json extractElasticsearchResults(Json searchResults, string key, ref PaginationM
 	
 	
 	foreach(hit; searchResults.hits.hits) {
-		auto jsonRecord = hit._source;
-		jsonRecord._score = hit._score;
+		auto jsonRecord = hit["_source"];
+		jsonRecord["_score"] = hit["_score"];
+		jsonRecord["_id"] = hit["_id"];
+		jsonRecord["_type"] = hit["_type"];
 		jsonRecords ~= jsonRecord;
 	}
 	
