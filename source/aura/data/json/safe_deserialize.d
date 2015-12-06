@@ -7,7 +7,7 @@ import std.format;
 import colorize;
 
 bool safeDeserialize(D)(ref D destination, Json json, string file = __FILE__, typeof(__LINE__) line = __LINE__) {
-	if (undefinedOrNull(json)) return;
+	if (undefinedOrNull(json)) return false;
 	try {
 		deserializeJson(destination, json);
 		return true;
