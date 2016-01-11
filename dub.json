@@ -5,11 +5,10 @@
 	"authors": ["David Monagle"],
 	"dependencies": {
         "vibe-d": "~>0.7.25",
-		"elasticsearch-d": "~>1.0.1",
+		"elasticsearch-d": "1.0.2",
         "colorize": ">=1.0.5",
         "dyaml": ">=0.5.1",
 	},
-	"version": "0.1.0",
 	"license": "MIT",
 	"configurations": [
 		{
