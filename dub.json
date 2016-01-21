@@ -5,7 +5,7 @@
 	"authors": ["David Monagle"],
 	"dependencies": {
         "vibe-d": "~>0.7.25",
-	"elasticsearch-d": "~>1.0.0",
+	"elasticsearch-d": "~>1.0.2",
         "colorize": "~>1.0.5",
 	"feature-test-d": "~>1.0.1",
         "dyaml": ">=0.5.1",
