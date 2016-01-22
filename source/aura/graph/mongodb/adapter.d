@@ -153,6 +153,27 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 	}
 
 	// Query functions
+    
+    /// Iterates over the given cursor and calls the callback for each deserialized `M`
+    void deserializeCursor(M : GraphModelInterface, C)(C cursor, void delegate(M) callback)
+	in {
+		assert(graph);
+	}
+	body {
+		while (!cursor.empty) {
+			M model;
+			auto bsonModel = cursor.front;
+
+			// Create and deserialize a new model
+			M newModel = new M();
+			newModel.deserializeBson(bsonModel);
+			newModel.graphPersisted = true;
+			
+            callback(newModel);
+
+			cursor.popFront;
+		}
+    }
 
 	/// Injects all results from the `cursor` into the graph. 
 	M[] injectCursor(M : GraphModelInterface, C)(C cursor, bool snapshot = true) 
@@ -162,19 +183,10 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 	body {
 		M[] _results;
 
-		while (!cursor.empty) {
-			M model;
-			auto bsonModel = cursor.front;
-
-			// Create and deserialize a new model
+        deserialize!M(cursor, (model) {
 			// graph.inject takes care of not reinserting an existing model
-			M newModel = new M();
-			newModel.deserializeBson(bsonModel);
-			newModel.graphPersisted = true;
-			_results ~= graph.inject(newModel, snapshot);
-
-			cursor.popFront;
-		}
+			_results ~= graph.inject(model, snapshot);
+		});
 
 		return _results;
 	}
