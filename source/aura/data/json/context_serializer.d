@@ -58,6 +58,11 @@ class ContextSerializer(C, D) : ContextSerializerInterface {
 			return json.filterOut(_updateAttributes);
 	}
 
+	/// Returns a copy of the given json with both the update and the access filters applied, ie: only fields updatable and accessible by the context should be included
+	Json jsonFilter(Json json) {
+        return jsonFilterUpdate(jsonFilterAccess(json));
+	}
+
 	/// Returns the raw Json that the filters work with. This should be overridden if custom fields are to be added
 	Json rawJson() {
 		if (!data) return Json(null);

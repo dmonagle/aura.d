@@ -110,7 +110,7 @@ private:
 	bool _graphDeleted;
 }
 
-/// Default impolementation of GraphModelInterface
+/// Default implementation of GraphModelInterface
 class GraphModel : GraphModelInterface {
 	mixin GraphModelImplementation;
 
@@ -119,7 +119,7 @@ class GraphModel : GraphModelInterface {
 }
 
 /// Copy the serializable attributes from source to destination
-M copyGraphAttributes(M : GraphModelInterface)(ref M dest, const ref M source) {
+M copyGraphAttributes(M : GraphModelInterface)(M dest, M source) {
 	import aura.graph.serialization;
 	foreach (i, mname; SerializableFields!M) {
 		__traits(getMember, dest, mname) = __traits(getMember, source, mname);
@@ -128,13 +128,22 @@ M copyGraphAttributes(M : GraphModelInterface)(ref M dest, const ref M source) {
 }
 
 /// Merge the GraphValue data into the given model
-M merge(M : GraphModelInterface)(ref M model, GraphValue data) {
+M merge(M : GraphModelInterface)(M model, GraphValue data) {
 	auto attributes = serializeToGraphValue(model);
 	auto newModel = deserializeGraphValue!M(aura.graph.value.helpers.merge(attributes, data));
 	model.copyGraphAttributes(newModel);
 	
 	return model;
 }
+
+import aura.data.json;
+/// Merge the Json data into the given model
+M merge(M : GraphModelInterface)(M model, const ref Json data) {
+    import aura.graph.value.conv;
+    auto mergeValue = toGraphValue(data);
+	return merge!M(model, mergeValue);
+}
+
 
 /// Creates a snapshot of the model
 GraphValue takeSnapshot(M : GraphModelInterface)(M model) {

@@ -45,7 +45,7 @@ bool isNull(T)(ref T value) {
 		return false;
 }
 
-bool isNotNull(T)(T value) {
+bool isNotNull(T)(ref T value) {
 	return !isNull(value);
 }
 

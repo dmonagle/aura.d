@@ -39,6 +39,46 @@ int fromGraphValue(GraphValue value) {
 }
 */
 
+import aura.data.json;
+import std.bigint;
+
+GraphValue toGraphValue(T : Json)(const ref T value) {
+    final switch(value.type) {
+        case Json.Type.undefined: 
+        case Json.Type.null_: 
+            return GraphValue(null); 
+        case Json.Type.bool_: 
+            return GraphValue(value.get!bool); 
+        case Json.Type.int_: 
+            return GraphValue(value.get!int); 
+        case Json.Type.bigInt: 
+            return GraphValue(value.get!BigInt); 
+        case Json.Type.float_: 
+            return GraphValue(cast(double)value.get!float); 
+        case Json.Type.string: 
+            return GraphValue(value.get!string); 
+        case Json.Type.array:
+            GraphValue.Array vArray; 
+            foreach(jValue; value) 
+                vArray ~= toGraphValue(jValue);
+            return GraphValue(vArray); 
+        case Json.Type.object:
+            GraphValue.Object vObject; 
+            foreach(string key, jValue; value) 
+                vObject[key] = toGraphValue(jValue);
+            return GraphValue(vObject); 
+    }
+} 
+
+unittest {
+    Json testJson = `{"dayOfWeek": "Wednesday", "day": 5}`.parseJsonString;
+    
+    auto value = toGraphValue(testJson);
+    assert(value["dayOfWeek"].get!string == "Wednesday");
+    assert(value["day"].get!int == 5);
+}
+
+
 GraphValue toGraphValue(T)(T value) 
 if (GraphValue.holdsType!T) {
 	return GraphValue(value);

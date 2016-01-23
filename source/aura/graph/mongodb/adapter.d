@@ -183,7 +183,7 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 	body {
 		M[] _results;
 
-        deserialize!M(cursor, (model) {
+        deserializeCursor!M(cursor, (model) {
 			// graph.inject takes care of not reinserting an existing model
 			_results ~= graph.inject(model, snapshot);
 		});

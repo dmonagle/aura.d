@@ -80,7 +80,14 @@ struct GraphValue {
 	this(T : GraphValue)(T v) { value = v.value; }
 	/// ditto
 	this(T : const U, U)(T v) {
-		value = Variant(cast(U)v);
+        // Handle nullable types
+        static if (__traits(compiles, v.isNull)) {
+            if (v.isNull) value = null;
+            else value = v.get;
+        }
+        else {
+		  value = Variant(cast(U)v);
+        }
 	}
 	/// ditto
 	this(T)(T v) { 

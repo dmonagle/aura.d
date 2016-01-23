@@ -20,12 +20,12 @@ string defineGraphBelongsToProperty(M, string propertyName, string key, string f
 	return format(`
 		@ignore @property %1$s %2$s(string file = __FILE__, typeof(__LINE__) line = __LINE__) {
 			enforce(graphInstance, "Attempted to use GraphBelongsTo property '%2$s(%1$s)' on model '" ~ graphType ~ "' without a graphInstance", file, line);
-			return graphGetBelongsTo!%1$s("%3$s", %4$s);
+			return graphInstance.find!(%1$s, "%3$s")(%4$s);
 		}
 	`, M.stringof, _propertyName, foreignKey, _key);
 }
 
-mixin template GraphBelongsTo(M, string propertyName = "", string key = "", string foreignKey = "") {
+mixin template GraphBelongsTo(M, string propertyName = "", string key = "", string foreignKey = "_id") {
 	mixin(defineGraphBelongsToProperty!(M, propertyName, key, foreignKey));
 }
 
@@ -52,7 +52,7 @@ string defineGraphOuterBelongsTo(L, M, string propertyName, string key, string f
 	`, M.stringof, _propertyName, _key, foreignKey, L.stringof);
 }
 
-mixin template GraphBelongsTo(L, M, string propertyName = "", string key = "", string foreignKey = "") {
+mixin template GraphBelongsTo(L, M, string propertyName = "", string key = "", string foreignKey = "_id") {
 	mixin(defineGraphOuterBelongsTo!(L, M, propertyName, key, foreignKey));
 }
 
