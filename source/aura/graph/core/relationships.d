@@ -19,8 +19,8 @@ string defineGraphBelongsToProperty(M, string propertyName, string key, string f
 	
 	return format(`
 		@ignore @property %1$s %2$s(string file = __FILE__, typeof(__LINE__) line = __LINE__) {
-			enforce(graphInstance, "Attempted to use GraphBelongsTo property '%2$s(%1$s)' on model '" ~ graphType ~ "' without a graphInstance", file, line);
-			return graphInstance.find!(%1$s, "%3$s")(%4$s);
+			enforce(graph, "Attempted to use GraphBelongsTo property '%2$s(%1$s)' on model '" ~ graphType ~ "' without a graph instance", file, line);
+			return graph.find!(%1$s, "%3$s")(%4$s);
 		}
 	`, M.stringof, _propertyName, foreignKey, _key);
 }
