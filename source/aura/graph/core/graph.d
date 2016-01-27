@@ -139,6 +139,21 @@ class Graph {
 	// Query methods
 
 	/// Searches for a model with the matching key and value and returns it
+	/// This will return the first model that matches. If no models match delegate function will be called with the default adapter.
+	/// The first results will be injected int othe graph and returned. Otherwise null is returned
+	M find(M, string key, V)(V value, M[] delegate(GraphAdapterInterface) adapterSearch) {
+		auto graphResults = this.filterModels!(M, key)(value);
+		if (graphResults.length) return graphResults[0];
+		
+		if (adapter) {
+			auto adapterResults = adapterDelegate(adapter);
+			if (adapterResults.length) return inject!M(cast(M)adapterResults[0]);
+		}
+		
+		return null;
+    }
+
+	/// Searches for a model with the matching key and value and returns it
 	/// This will return the first model that matches, if no models match, the adapter (if set) will be used to perform the search
 	/// any result will be injected into the graph and returned. If no result is found, null is returned.
 	/// This function is best used for keys that are considered "primary" in their collections.

@@ -175,6 +175,19 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 		}
     }
 
+    /// Iterates over the given cursor, deserializes and injects the model and calls the callback for each deserialized `M`
+    void injectCursor(M : GraphModelInterface, C)(C cursor, void delegate(M) callback, bool snapshot = true)
+	in {
+		assert(graph);
+	}
+	body {
+        deserializeCursor!M(cursor, (model) {
+			// graph.inject takes care of not reinserting an existing model
+            graph.inject(model, snapshot); 
+			callback(model);
+		});
+    }
+
 	/// Injects all results from the `cursor` into the graph. 
 	M[] injectCursor(M : GraphModelInterface, C)(C cursor, bool snapshot = true) 
 	in {
@@ -183,10 +196,9 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 	body {
 		M[] _results;
 
-        deserializeCursor!M(cursor, (model) {
-			// graph.inject takes care of not reinserting an existing model
-			_results ~= graph.inject(model, snapshot);
-		});
+        injectCursor!M(cursor, (model) {
+			_results ~= model;
+		}, snapshot);
 
 		return _results;
 	}
@@ -218,6 +230,24 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 	auto findCursor(M : GraphModelInterface)() {
 		return getCollection!M.find();
 	}
+    
+    /// Convenience method to inject straight from a query
+    void injectQuery(M : GraphModelInterface, T)(T query, void delegate(M) callback, uint limit = 0, bool snapshot = true) {
+        auto cursor = findCursor!M(query);
+        if (limit) cursor.limit = limit;
+        injectCursor!M(cursor, callback);
+    }
+
+    /// ditto
+	M[] injectQuery(M : GraphModelInterface, T)(T query, uint limit = 0, bool snapshot = true) {
+        M[] results;
+        
+        injectQuery!M(query, (model) {
+            results ~= model;
+        }, limit, snapshot);
+        
+        return results;
+    } 
 
 	/// Find a single model where the key matches the value
 	/// The result is injected into the graph. If the result already exists in the graph, it will return the graph value

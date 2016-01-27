@@ -20,7 +20,15 @@ class GraphMongoModel : GraphModel {
 			_modelId = value;
 			graphPersisted = _modelId.valid;
 		}
-	}
+    
+        /// Returns the time the object was created (based on the BsonObjectID)
+        @property Nullable!SysTime createdAt() {
+            Nullable!SysTime returnTime;
+            auto id = _id;
+            if (id.valid) returnTime = id.timeStamp;
+            return returnTime;
+    	}
+  	}
 
 	void ensureId() {
 		if (!_modelId.valid) _modelId = BsonObjectID.generate;
