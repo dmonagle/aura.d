@@ -44,9 +44,9 @@ string defineGraphOuterBelongsTo(L, M, string propertyName, string key, string f
 	
 	return format(`
 		%1$s %2$s(%5$s model) {
-			assert(model.graphInstance, "Attempted to use BelongsTo property '%2$s' on model '%1$s' without a graphInstance");
+			assert(model.graph, "Attempted to use BelongsTo property '%2$s' on model '%1$s' without a graph");
 			%1$s returnValue;
-			if (model.graphInstance) returnValue = model.graphInstance.find!(%1$s,"%4$s")(model.%3$s);
+			if (model.graph) returnValue = model.graph.find!(%1$s,"%4$s")(model.%3$s);
 			return returnValue;
 		}
 	`, M.stringof, _propertyName, _key, foreignKey, L.stringof);

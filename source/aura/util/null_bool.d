@@ -36,7 +36,7 @@ unittest {
 	assert(!isFalse(nb));
 }
 
-bool isNull(T)(ref T value) {
+bool isNull(T)(T value) {
 	static if (is(T == class))
 		return value ? false : true;
 	else static if (hasMember!(T, "isNull"))
@@ -45,7 +45,7 @@ bool isNull(T)(ref T value) {
 		return false;
 }
 
-bool isNotNull(T)(ref T value) {
+bool isNotNull(T)(T value) {
 	return !isNull(value);
 }
 

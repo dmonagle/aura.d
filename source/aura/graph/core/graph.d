@@ -20,7 +20,7 @@ import std.array;
 import std.traits;
 import std.format;
 
-/// Exposes a graphInstance property
+/// Exposes a graph property
 interface GraphInstanceInterface {
 	@ignore @property inout(Graph) graph() inout;
 	@property void graph(Graph value);

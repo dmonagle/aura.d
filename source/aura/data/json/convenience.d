@@ -39,6 +39,11 @@ bool isNull(const ref Json json) {
 	return json.type == Json.Type.null_;
 }
 
+/// Returns true if the Json object is not null or undefined
+bool isValid(const ref Json json) {
+    return (json.type != Json.Type.null_ && json.type != Json.Type.undefined);
+}
+
 bool isSet(const ref Json json) {
 	return !(isNull(json) || isUndefined(json));
 }

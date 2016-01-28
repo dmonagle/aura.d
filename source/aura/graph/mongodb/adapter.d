@@ -44,15 +44,16 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 		return getCollection(ModelType.stringof);
 	}
 
-	static Bson dropCollection(string collection) {
+    /// Drops the collection for the given `modelTypeName`
+	Bson dropCollection(string modelTypeName) {
 		auto command = Bson.emptyObject;
-		command.drop = collection;
+		command["drop"] = containerNameFor(modelTypeName);
 		return database.runCommand(command);
 	}
-	
+
+    /// Drops the collection for the given model `M`	
 	Bson dropCollection(M : GraphModelInterface)() {
-		auto name = containerNameFor(M.stringof);
-		return dropCollection(name);
+		return dropCollection(M.stringof);
 	}
 	
 	string collectionPath(string modelType) {
@@ -248,6 +249,18 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
         
         return results;
     } 
+    
+    /// Works like injectQuery only it limits the results to 1 and returns the corresponding model (if found)
+    /// else returns null
+    M injectQueryOne(M : GraphModelInterface, T)(T query, bool snapshot = true) {
+        M result;
+        
+        injectQuery!M(query, (model) {
+            result = model;
+        }, 1, snapshot);
+        
+        return result;
+    }
 
 	/// Find a single model where the key matches the value
 	/// The result is injected into the graph. If the result already exists in the graph, it will return the graph value

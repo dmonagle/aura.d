@@ -95,6 +95,15 @@ class GraphElasticsearchAdapter(M ...) : GraphAdapter!M {
 		return true;
 	}
 
+    /// Makes sure the index for the `M` model is synced
+	void refreshIndex(M)() {
+		auto name = containerNameFor(M.stringof);
+		if (client.indexExists(name)) {
+			logDebug("Manually refreshing Elasticsearch Index: '%s'", name);
+			client.refreshIndex(name);
+		}
+	}
+
 
 	override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit = 0) {
 		GraphModelInterface[] results;
