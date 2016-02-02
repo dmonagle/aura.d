@@ -18,9 +18,9 @@ Bson toBson(const GraphValue value) {
 		return bson;
 	}
 	else if (value.isArray) {
-		auto bson = Bson.emptyArray;
-		foreach(v; value.get!(GraphValue.Array)) bson.append(v.toBson);
-		return bson;
+        Bson[] values;
+		foreach(v; value.get!(GraphValue.Array)) values ~= v.toBson;
+		return values.serializeToBson;
 	}
 
 	if (value.type ==typeid(BsonObjectID)) return Bson(value.get!(BsonObjectID));
