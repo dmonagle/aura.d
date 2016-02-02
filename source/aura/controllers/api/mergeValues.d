@@ -1,8 +1,8 @@
 ///
 module aura.controllers.api.mergeValues;
 
-import aura.graph.value;
-import aura.graph.core.model;
+import graph.core.model;
+import graph.value;
 import aura.data.json;
 
 /// Merges the JSON updates with the given model, via the serializer
