@@ -313,7 +313,7 @@ class Graph(A ...) {
 	body {
 		bool result = true;
 
-		logDebug("Graph is syncing model %s, %s/%s records", M.stringof, store.pendingSync.length, store.length);
+		logDebugV("Graph is syncing model %s, %s/%s records", M.stringof, store.pendingSync.length, store.length);
 		foreach(record; store.pendingSync) {
 			auto model = cast(M)record;
 			if (!sync(model)) result = false;
