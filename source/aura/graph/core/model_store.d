@@ -70,7 +70,7 @@ class GraphModelStore {
 		auto id = model.graphState.id;
 		_store[""].remove(id);
 		foreach (key, meta; _indexMeta) {
-			_store[key].remove(meta.getKey(model));
+			if (key in _store) _store[key].remove(meta.getKey(model));
 		}
 	}
 
