@@ -3,8 +3,8 @@ docs.json
 __dummy.html
 *.o
 *.obj
-libaura-d.a
-__test__aura-d__
+**/*.a
 **/.DS_Store
+**/__test*
 dub.userprefs
 dub.selections.json

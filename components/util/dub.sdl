@@ -1,0 +1,8 @@
+name "util"
+description "Util component for aura.d"
+copyright "Copyright © 2016, David Monagle"
+authors "David Monagle"
+license "MIT"
+targetType "library"
+
+dependency "vibe-d" version="~>0.7.25"

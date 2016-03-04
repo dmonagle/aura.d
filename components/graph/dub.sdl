@@ -1,0 +1,11 @@
+name "graph"
+description "Graph model storage library for D"
+copyright "Copyright © 2015, Green Energy Trading"
+authors "David Monagle"
+targetType "library"
+
+dependency "aura:util" version="*"
+dependency "aura:data" version="*"
+dependency "string-transform-d" version="~>1.0.0"
+dependency "vibe-d" version="~>0.7.25"
+
