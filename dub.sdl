@@ -1,0 +1,23 @@
+name "aura"
+description "A framework that sits around vibe.d"
+copyright "Copyright © 2016, David Monagle"
+authors "David Monagle"
+license "MIT"
+targetType "library"
+
+dependency "vibe-d" version="~>0.7.25"
+dependency "elasticsearch-d" version="~>1.0.2"
+dependency "feature-test-d" version="~>1.0.1"
+dependency "dyaml" version="~>0.5.1"
+
+dependency "aura:graph" version="*"
+dependency "aura:graph-mongodb" version="*"
+dependency "aura:graph-elasticsearch" version="*"
+dependency "aura:util" version="*"
+dependency "aura:data" version="*"
+
+subPackage "./components/util"
+subPackage "./components/data"
+subPackage "./components/graph"
+subPackage "./components/graph-mongodb"
+subPackage "./components/graph-elasticsearch"

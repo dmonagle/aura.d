@@ -1,0 +1,10 @@
+name "graph-elasticsearch"
+description "Graph (aura-graph) adapter for Elasticsearch"
+copyright "Copyright © 2016, David Monagle"
+authors "David Monagle"
+license "MIT"
+targetType "library"
+
+dependency "aura:graph" version="~>1.0.0"
+dependency "elasticsearch-d" version="~>1.0.0"
+dependency "feature-test-d" version="~>1.0.1"
