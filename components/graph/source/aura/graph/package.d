@@ -11,3 +11,4 @@ public import aura.graph.model;
 public import aura.graph.adapter;
 public import aura.graph.query;
 public import aura.graph.relationships;
+public import aura.graph.resolve;

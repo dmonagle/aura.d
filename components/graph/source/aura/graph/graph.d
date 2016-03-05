@@ -83,11 +83,11 @@ class Graph {
 		modelStore!(M).removeModel(model);
 	}
 	
-	/// Returns the adapter for the graph
-	@property GraphAdapterInterface adapter() { return _adapter; }
-	/// Sets the adapter for the graph
-	@property void adapter(GraphAdapterInterface adapter) { 
-		_adapter = adapter; 
+	/// Returns the default adapter for the graph
+	@property GraphAdapterInterface defaultAdapter() { return _defaultAdapter; }
+	/// Sets the default adapter for the graph
+	@property void defaultAdapter(GraphAdapterInterface adapter) { 
+		_defaultAdapter = adapter; 
 		adapter.graph = this;
 	}
 	
@@ -108,9 +108,9 @@ class Graph {
 	
 	/// Initiates a sync of the graph with the adapter
 	bool sync() {
-		if (!_adapter) return false;
+		if (!_defaultAdapter) return false;
 		emitGraphWillSync;
-		auto result =_adapter.sync;
+		auto result =_defaultAdapter.sync;
 		emitGraphDidSync;
 		return result;
 	}
@@ -154,7 +154,7 @@ class Graph {
     }
 
 	/// Searches for a model with the matching key and value and returns it
-	/// This will return the first model that matches, if no models match, the adapter (if set) will be used to perform the search
+	/// This will return the first model that matches, if no models match, the defaultAdapter (if set) will be used to perform the search
 	/// any result will be injected into the graph and returned. If no result is found, null is returned.
 	/// This function is best used for keys that are considered "primary" in their collections.
 	M find(M, string key, V : GraphValue)(V value) {
@@ -175,13 +175,13 @@ class Graph {
 	}
 
 	/// Searches for models with the given key and value.
-	/// Unlike the find method, the adapter, if set,  is always consulted, each match is checked to see if it already exists in the graph.
+	/// Unlike the find method, the defaultAdapter, if set,  is always consulted, each match is checked to see if it already exists in the graph.
 	/// If a model exists and replace is false, then the original model is returned, otherwise it is replaced in the graph with the
-	/// version returned from the adapter.
-	/// If no adapter is set, this just returns all matching models already in the graph
+	/// version returned from the defaultAdapter.
+	/// If no defaultAdapter is set, this just returns all matching models already in the graph
 	M[] findMany(M, string key, V : GraphValue)(V value, uint limit = 0, bool snapshot = true, bool replace = false) {
-		if (adapter) {
-			auto adapterResults = adapter.graphFind(M.stringof, key, value, limit);
+		if (defaultAdapter) {
+			auto adapterResults = defaultAdapter.graphFind(M.stringof, key, value, limit);
 			foreach(result; adapterResults) {
 				inject(cast(M)result, snapshot, replace); 
 			}
@@ -205,7 +205,7 @@ class Graph {
 	void emitGraphDidSync() { foreach(listener; _graphEventListeners) listener.graphDidSync(); }
 	
 private:
-	GraphAdapterInterface _adapter;
+	GraphAdapterInterface _defaultAdapter;
 	GraphEventListener[] _graphEventListeners;
 }
 

@@ -204,6 +204,7 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 		return _results;
 	}
 
+    /// Required by the graph interface to allow find to work from Graph
 	override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit = 0) {
 		GraphModelInterface[] results;
 

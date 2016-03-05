@@ -30,7 +30,12 @@ interface GraphAdapterInterface : GraphInstanceInterface {
 	GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit);
 }
 
-/// A base class for Graph Adapters
+/** 
+    A base class for Graph Adapters
+    
+    Functions that need to be overridden are:
+        GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit)
+*/
 class GraphAdapter(Models ...) : GraphAdapterInterface {
 	mixin GraphInstanceImplementation;
 	/// Access the Graph instance associated with this adapter

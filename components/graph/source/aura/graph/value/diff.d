@@ -82,8 +82,6 @@ unittest {
 	auto diffForward = diff(j1, j2);
 	auto diffBackward = diff(j2, j1);
 
-	import aura.graph.value.printer;
-
 	assert(diffForward["title"] == null);
 	assert(diffForward["age"] == 65);
 	assert(diffForward["car"]["model"] == "Falcon");

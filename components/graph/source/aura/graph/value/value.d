@@ -86,14 +86,15 @@ struct GraphValue {
             else value = v.get;
         }
         else {
-		  value = Variant(cast(U)v);
+          static if (holdsType!U)
+		      value = Variant(cast(U)v);
+          else {
+              // Last ditch effort, try to convert to a string
+              value = v.to!string;
+          }
+            
         }
 	}
-	/// ditto
-	this(T)(T v) { 
-		value = Variant(v);
-	}
-
 	
 	/**
      * Gets a descendant of this value.
@@ -163,6 +164,18 @@ struct GraphValue {
 		this.value = value.value;
 		return this;
 	}
+
+	bool opEquals(T)(T v, string file = __FILE__, typeof(__LINE__) line = __LINE__) {
+		static if (__traits(compiles, v == value)) return v == value;
+		else {
+			// Can't do a direct comparison so try to cast the passed value to the stored variant type
+			foreach (T; GraphBasicTypes) {
+				if (isType!T) 
+					static if (__traits(compiles, v.to!T)) return v.to!T == value;
+			}
+			assert(false, format("Couldn't compare the GraphValue to %s in %s:%s", T.stringof, file, line));
+		}
+	}
 	
 	ref inout(Array) castArray(string file = __FILE__, typeof(__LINE__) line = __LINE__) inout {
 		auto asArray = value.peek!(Array);
@@ -215,11 +228,13 @@ struct GraphValue {
 		return GraphValue(value);
 	}
 
+	/*
 	TT convert(TT, alias func)() {
 		foreach(T; Types) {
 			if (typeid(T) == value.type) return func(value.get!T);
 		}
 	}
+	*/
 	
 	/// Appends the given element to the array. If the element is an array, it will be nested
 	void append(T)(T newValue, string file = __FILE__, typeof(__LINE__) line = __LINE__)
@@ -291,4 +306,19 @@ unittest {
 	GraphValue d = GraphValue.emptyObject;
 	d["c"] = 22;
 	assert(d["c"] == 22);
+}
+
+// opEquals test
+unittest {
+	enum Color {
+		red,
+		green,
+		yellow,
+		blue
+	}
+
+	GraphValue g = "red";
+	assert(g == "red");
+	assert(g == Color.red);
+	assert(g != Color.blue);
 }

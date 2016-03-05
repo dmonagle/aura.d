@@ -67,7 +67,20 @@ interface GraphModelInterface : GraphInstanceInterface {
 	@property GraphValue graphSnapshot() const;
 }
 
+
+// Implmentation of the graphId property as the given type T
+mixin template GraphModelId(T) {
+    import std.conv;
+    
+    T id;
+
+    override @property string graphId() const { return id.to!string; }
+    override @property void graphId(string newId) { id = newId.to!T; }
+}
+
 /// Mixin to implement basic functionality to a `GraphModelInterface`
+/// This does not create the required graphId property as the underlying type could 
+/// be anything
 mixin template GraphModelImplementation() {
 	mixin GraphTypeProperty;
 	mixin GraphInstanceImplementation;
