@@ -23,13 +23,13 @@ Bson toBson(const GraphValue value) {
 		return values.serializeToBson;
 	}
 
-	if (value.type ==typeid(BsonObjectID)) return Bson(value.get!(BsonObjectID));
-	foreach(Type; TypeTuple!(bool, double, int, long, string)) {
-		if (value.type ==typeid(Type)) return Bson(value.get!Type);
+	if (value.type == typeid(BsonObjectID)) return Bson(value.get!(BsonObjectID));
+	foreach(Type; TypeTuple!(bool, double, int, uint, long, ulong, string)) {
+		if (value.type == typeid(Type)) return Bson(value.get!Type);
 	}
-	if (value.type ==typeid(BigInt)) return Bson(value.get!(BigInt).toLong);
-	if (value.type ==typeid(Date)) return Bson(value.get!(Date).toISOExtString);
-	if (value.type ==typeid(SysTime)) return Bson(BsonDate(value.get!(SysTime)));
+	if (value.type == typeid(BigInt)) return Bson(value.get!(BigInt).toLong);
+	if (value.type == typeid(Date)) return Bson(value.get!(Date).toISOExtString);
+	if (value.type == typeid(SysTime)) return Bson(BsonDate(value.get!(SysTime)));
 
 
 	return Bson(null);

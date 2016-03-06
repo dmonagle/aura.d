@@ -123,6 +123,20 @@ debug (featureTest) {
                         results.length.shouldEqual(1);
                         results[0].name.shouldEqual("red");
                     });
+                    f.scenario("Each find of a color should end up in the graph", {
+                        auto graph = new TestGraph;
+
+                        auto result = graph.find!(TestColor, "name")("red");
+                        result.name.shouldEqual("red");
+
+                        result = graph.find!(TestColor, "name")("green");
+                        result.name.shouldEqual("green");
+                        
+                        result = graph.find!(TestColor, "name")("blue");
+                        result.name.shouldEqual("blue");
+
+                        graph.length.shouldEqual(3, "Size of graph");
+                    });
                 }); 
     }
 }

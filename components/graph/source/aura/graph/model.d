@@ -182,10 +182,13 @@ in {
 	assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
 }
 body {
+    import vibe.core.log;
+    
 	import aura.graph.value.diff;
 	auto currentState = serializeToGraphValue(model);
 	if (!model.graphHasSnapshot) return currentState;
-	return model.graphSnapshot.diff(currentState);
+    auto diff = model.graphSnapshot.diff(currentState);
+	return diff;
 }
 
 version (unittest) {

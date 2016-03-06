@@ -14,6 +14,7 @@ import aura.graph.embedded;
 import aura.graph.events;
 
 import vibe.data.serialization;
+import vibe.core.log;
 
 import std.algorithm;
 import std.array;
@@ -141,13 +142,15 @@ class Graph {
 	/// Searches for a model with the matching key and value and returns it
 	/// This will return the first model that matches. If no models match delegate function will be called with the default adapter.
 	/// The first results will be injected int othe graph and returned. Otherwise null is returned
-	M find(M, string key, V)(V value, M[] delegate(GraphAdapterInterface) adapterSearch) {
+	M find(M, string key, V)(V value, M delegate(GraphAdapterInterface) adapterSearch, bool snapshot = true) {
 		auto graphResults = this.filterModels!(M, key)(value);
 		if (graphResults.length) return graphResults[0];
 		
-		if (adapter) {
-			auto adapterResults = adapterDelegate(adapter);
-			if (adapterResults.length) return inject!M(cast(M)adapterResults[0]);
+		if (defaultAdapter) {
+			auto adapterResult = adapterSearch(defaultAdapter);
+			if (adapterResult) {
+                return inject!M(adapterResult, snapshot);
+            }
 		}
 		
 		return null;
@@ -157,16 +160,12 @@ class Graph {
 	/// This will return the first model that matches, if no models match, the defaultAdapter (if set) will be used to perform the search
 	/// any result will be injected into the graph and returned. If no result is found, null is returned.
 	/// This function is best used for keys that are considered "primary" in their collections.
-	M find(M, string key, V : GraphValue)(V value) {
-		auto graphResults = this.filterModels!(M, key)(value);
-		if (graphResults.length) return graphResults[0];
-		
-		if (defaultAdapter) {
-			auto adapterResults = defaultAdapter.graphFind(M.stringof, key, value, 1);
-			if (adapterResults.length) return inject!M(cast(M)adapterResults[0]);
-		}
-		
-		return null;
+	M find(M, string key, V : GraphValue)(V value, bool snapshot = true) {
+        return find!(M, key, V)(value, (adapter) {
+			auto results = adapter.graphFind(M.stringof, key, value, 1);
+            if (results.length) return cast(M)results[0];
+            return null;
+        }, snapshot);
 	}
 
 	/// Ditto
@@ -175,19 +174,30 @@ class Graph {
 	}
 
 	/// Searches for models with the given key and value.
-	/// Unlike the find method, the defaultAdapter, if set,  is always consulted, each match is checked to see if it already exists in the graph.
+	/// Unlike the find method, the defaultAdapter, if set, is always consulted, each match is checked to see if it already exists in the graph.
 	/// If a model exists and replace is false, then the original model is returned, otherwise it is replaced in the graph with the
 	/// version returned from the defaultAdapter.
 	/// If no defaultAdapter is set, this just returns all matching models already in the graph
-	M[] findMany(M, string key, V : GraphValue)(V value, uint limit = 0, bool snapshot = true, bool replace = false) {
+	M[] findMany(M, string key, V : GraphValue)(V value, GraphModelInterface[] delegate(GraphAdapterInterface) adapterSearch, uint limit = 0, bool snapshot = true, bool replace = false) {
 		if (defaultAdapter) {
-			auto adapterResults = defaultAdapter.graphFind(M.stringof, key, value, limit);
+			auto adapterResults = adapterSearch(defaultAdapter);
 			foreach(result; adapterResults) {
 				inject(cast(M)result, snapshot, replace); 
 			}
 		}
 
 		return filterModels!(M, key)(this, value);
+	}
+
+	/// Searches for models with the given key and value.
+	/// Unlike the find method, the defaultAdapter, if set, is always consulted, each match is checked to see if it already exists in the graph.
+	/// If a model exists and replace is false, then the original model is returned, otherwise it is replaced in the graph with the
+	/// version returned from the defaultAdapter.
+	/// If no defaultAdapter is set, this just returns all matching models already in the graph
+	M[] findMany(M, string key, V : GraphValue)(V value, uint limit = 0, bool snapshot = true, bool replace = false) {
+        return findMany!(M, key, V)(value, (adapter) {
+            return defaultAdapter.graphFind(M.stringof, key, value, limit);            
+        }, limit, snapshot, replace);
 	}
 
 	/// Ditto

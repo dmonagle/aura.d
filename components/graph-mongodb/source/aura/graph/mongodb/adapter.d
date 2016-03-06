@@ -72,7 +72,9 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 
 	/// Sync models in the graph with the database
 	override bool sync() {
+        logDebug("Mongo Adapter is preparing to sync");
 		foreach(M; Models) {
+            logDebugV("Syncing %s x %s", M.stringof, graph.modelStore!M.length);
 			foreach(m; graph.modelStore!M) {
 				auto model = cast(M)m;
 
@@ -168,7 +170,10 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 			// Create and deserialize a new model
 			M newModel = new M();
 			newModel.deserializeBson(bsonModel);
+            
+            // As the model is coming from a cursor, it is persisted already
 			newModel.graphPersisted = true;
+            newModel.graphUntouch; // No changes have been made at this point
 			
             callback(newModel);
 
@@ -209,14 +214,15 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 		GraphModelInterface[] results;
 
 		auto query = [key: value.toBson];
-		logDebugV(`Graph MongoDB %s:.find(%s: %s(%s))`, containerNameFor(graphType), key, value, value.type);
-		auto cursor = getCollection(graphType).find();
+		logDebugV(`Graph MongoDB %s.find(%s: %s(%s))`, containerNameFor(graphType), key, value, value.type);
+		auto cursor = getCollection(graphType).find(query);
 		if (limit) cursor.limit(limit);
 
 		while (!cursor.empty) {
 			auto bson = cursor.front;
 			auto result = deserialize(graphType, bson);
 			result.graphPersisted = true;
+            result.graphUntouch;
 			results ~= result;
 			cursor.popFront;
 		}
@@ -225,11 +231,13 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 
 	/// Runs a query for the given model type and returns the MongoCursor
 	auto findCursor(M : GraphModelInterface, T)(T query) {
+		logDebugV(`Graph MongoDB %s.find(%s)`, containerNameFor(M.stringof), query);
 		return getCollection!M.find(query);
 	}
 
 	/// Runs a query for all items in the collection specified by M and returns a MongoCursor
 	auto findCursor(M : GraphModelInterface)() {
+		logDebugV(`Graph MongoDB %s.find()`, containerNameFor(M.stringof));
 		return getCollection!M.find();
 	}
     
