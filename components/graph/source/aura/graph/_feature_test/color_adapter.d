@@ -54,7 +54,7 @@ debug (featureTest) {
             initColor("cyan", 0, 255, 255, TestColor.Type.secondary);    
         }
         
-        GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit = 0) {
+        override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit = 0) {
             switch (graphType) {
                 case "TestColor":
                     return array(findColor(key, value, limit).map!((c) => cast(GraphModelInterface)c));

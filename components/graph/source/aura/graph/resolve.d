@@ -3,14 +3,19 @@ module aura.graph.resolve;
 import aura.graph;
 
 
-interface GraphResolveInterface {
+interface GraphResolverInterface {
 	bool resolved() const;
 	void resolve(bool force);
 }
 
-class GraphResolver(T, alias pred = function() {}) : GraphResolveInterface {
+class GraphResolver(T) : GraphResolverInterface {
+    alias ResolverDelegate = T delegate(); 
 	this() {
 	}
+    
+    this(ResolverDelegate resolver) {
+        _resolver = resolver;
+    }
 
 	this(T value) {
 		_value = value;
@@ -18,7 +23,7 @@ class GraphResolver(T, alias pred = function() {}) : GraphResolveInterface {
 
 	bool resolved() const { return _value ? true : false; }
 	void resolve(bool force = false) {
-        if (!resolved || force) pred(); 
+        if (!resolved || force) _value = _resolver(); 
     }
 	
 	@property T value() {
@@ -34,6 +39,7 @@ class GraphResolver(T, alias pred = function() {}) : GraphResolveInterface {
 	
 private:
 	T _value;
+    ResolverDelegate _resolver;
 }
 
 version (unittest) {

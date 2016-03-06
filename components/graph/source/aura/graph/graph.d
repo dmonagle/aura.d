@@ -161,8 +161,8 @@ class Graph {
 		auto graphResults = this.filterModels!(M, key)(value);
 		if (graphResults.length) return graphResults[0];
 		
-		if (adapter) {
-			auto adapterResults = adapter.graphFind(M.stringof, key, value, 1);
+		if (defaultAdapter) {
+			auto adapterResults = defaultAdapter.graphFind(M.stringof, key, value, 1);
 			if (adapterResults.length) return inject!M(cast(M)adapterResults[0]);
 		}
 		

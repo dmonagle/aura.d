@@ -1,5 +1,6 @@
 ﻿module aura._feature_tests.graph.mongodb;
 
+/*
 debug (featureTest) {
 	import feature_test;
 	import aura.graph.core;
@@ -151,3 +152,4 @@ debug (featureTest) {
 			});
 	}
 }
+*/
