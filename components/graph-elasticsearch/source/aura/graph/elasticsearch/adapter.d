@@ -46,8 +46,8 @@ class GraphElasticsearchAdapter(M ...) : GraphAdapter!M {
 	/// Return the name of the container to be used for the given modelName
 	/// by default this returns the typename verbatim. This method can be overridden to return custom containerNames
 	override string containerNameFor(string typeName) {
-		import aura.util.inflections.en;
-		import aura.util.string_transforms;
+		import inflections.en;
+		import transforms.snake;
 		
 		return prefix ~ typeName.snakeCase.pluralize;
 	}
