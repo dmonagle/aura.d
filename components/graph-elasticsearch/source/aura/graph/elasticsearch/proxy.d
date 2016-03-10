@@ -31,7 +31,9 @@ class ElasticsearchIndexProxy(Adapter : GraphAdapterInterface) : GraphEventListe
 					auto bulk = EsBulkProxy(esAdapter.client);
 					logDebug("ElasticsearchIndexProxy: Bulk syncing %s %s models with elasticsearch", modelLength, M.stringof);
 					foreach(m; modelStore!M) {
-						bulk.appendIndex(esAdapter.containerNameFor(M.stringof), m.graphType, m.graphId, esAdapter.toIndexedJson(cast(M)m));
+                        auto json = esAdapter.toIndexedJson(cast(M)m);
+                        ES_FilterReservedFieldNames(json);
+						bulk.appendIndex(esAdapter.containerNameFor(M.stringof), m.graphType, m.graphId, json);
 					}
 					bulk.flush();
 				}

@@ -52,8 +52,11 @@ class GraphElasticsearchAdapter(M ...) : GraphAdapter!M {
 		return prefix ~ typeName.snakeCase.pluralize;
 	}
 
+    /// Inserts or updates a model into 
 	void index(M : GraphModelInterface)(M model) {
-		client.index(containerNameFor(model.graphType), model.graphType, model.graphId, toIndexedJson(model).toString);
+        auto json = toIndexedJson(model);
+        ES_FilterReservedFieldNames(json);
+		client.index(containerNameFor(model.graphType), model.graphType, model.graphId, json.toString);
 	}
 
 	/// Deletes the index associated with the given model

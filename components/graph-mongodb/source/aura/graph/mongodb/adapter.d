@@ -50,6 +50,11 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 		command["drop"] = containerNameFor(modelTypeName);
 		return database.runCommand(command);
 	}
+    
+    /// Drops the entire database, use with caution
+    Bson dropDatabase() {
+		return database.runCommand(["dropDatabase": 1]);
+    }
 
     /// Drops the collection for the given model `M`	
 	Bson dropCollection(M : GraphModelInterface)() {
