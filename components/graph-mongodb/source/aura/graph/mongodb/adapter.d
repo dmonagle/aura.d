@@ -96,6 +96,15 @@ class GraphMongoAdapter(M ...) : GraphAdapter!M {
 		return true;
 	}
 
+	/// Deletes from the container for M all models matching the query
+	bool _delete(M : GraphModelInterface, T)(T query) {
+        auto collection = getCollection!M;
+        logDebugV("GraphMongoAdapter: Removing collection %s: query: %s", collection.name, query.serializeToJson);
+        collection.remove(query);
+
+		return true;
+	}
+
 	/// Deletes the model from the databaase
 	bool _delete(M : GraphModelInterface)(M model) {
 		if (model.graphPersisted) {
