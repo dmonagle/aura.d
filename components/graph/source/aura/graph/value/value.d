@@ -167,7 +167,7 @@ struct GraphValue {
 		return this;
 	}
 
-	bool opEquals(T)(T v, string file = __FILE__, typeof(__LINE__) line = __LINE__) {
+	bool opEquals(T)(T v, string file = __FILE__, typeof(__LINE__) line = __LINE__) const {
 		static if (__traits(compiles, v == value)) return v == value;
 		else {
 			// Can't do a direct comparison so try to cast the passed value to the stored variant type
