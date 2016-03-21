@@ -64,53 +64,53 @@ private:
 	M _model;
 }
 
-version (unittest) {
-	class GraphTestUser : GraphModelInterface {
-		mixin GraphModelImplementation;
+// version (unittest) {
+// 	class GraphTestUser : GraphModelInterface {
+// 		mixin GraphModelImplementation;
 		
-		string id;
-		string name;
-        string bestFriendId;
+// 		string id;
+// 		string name;
+//         string bestFriendId;
 
-		override @property string graphId() const { return id; }
-		override @property void graphId(string newId) { id = newId; }
+// 		override @property string graphId() const { return id; }
+// 		override @property void graphId(string newId) { id = newId; }
         
-        private alias BestFriendResolver  = GraphBelongsToResolver!(GraphTestUser, GraphTestUser, "bestFriendId", "id");
-        private BestFriendResolver _bestFriendResolver; 
-        @ignore @property BestFriendResolver bestFriend() {
-            if (!_bestFriendResolver)  _bestFriendResolver = new BestFriendResolver(this);
-            return _bestFriendResolver; 
-        }
-	}
+//         private alias BestFriendResolver  = GraphBelongsToResolver!(GraphTestUser, GraphTestUser, "bestFriendId", "id");
+//         private BestFriendResolver _bestFriendResolver; 
+//         @ignore @property BestFriendResolver bestFriend() {
+//             if (!_bestFriendResolver)  _bestFriendResolver = new BestFriendResolver(this);
+//             return _bestFriendResolver; 
+//         }
+// 	}
 	
-	unittest {
-        auto graph = new Graph;
+// 	unittest {
+//         auto graph = new Graph;
         
-		auto david = graph.inject(new GraphTestUser);
-        david.id = "0";
-		david.name = "David";
+// 		auto david = graph.inject(new GraphTestUser);
+//         david.id = "0";
+// 		david.name = "David";
 
-		auto mia = graph.inject(new GraphTestUser);
-        mia.id = "1";
-		mia.name = "Mia";
-		mia.bestFriendId = "0";
+// 		auto mia = graph.inject(new GraphTestUser);
+//         mia.id = "1";
+// 		mia.name = "Mia";
+// 		mia.bestFriendId = "0";
 
-        assert(mia.bestFriend);
-        assert(mia.bestFriend.name == "David");
-	}
+//         assert(mia.bestFriend);
+//         assert(mia.bestFriend.name == "David");
+// 	}
 	
-	unittest {
-        auto graph = new Graph;
+// 	unittest {
+//         auto graph = new Graph;
         
-		auto david = graph.inject(new GraphTestUser);
-        david.id = "0";
-		david.name = "David";
+// 		auto david = graph.inject(new GraphTestUser);
+//         david.id = "0";
+// 		david.name = "David";
 
-		auto mia = graph.inject(new GraphTestUser);
-        mia.id = "1";
-		mia.name = "Mia";
+// 		auto mia = graph.inject(new GraphTestUser);
+//         mia.id = "1";
+// 		mia.name = "Mia";
 
-        mia.bestFriend.value = david;
-        assert(mia.bestFriendId == "0");
-	}
-}
+//         mia.bestFriend.value = david;
+//         assert(mia.bestFriendId == "0");
+// 	}
+// }

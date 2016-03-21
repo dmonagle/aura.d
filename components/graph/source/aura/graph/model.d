@@ -218,6 +218,13 @@ version (unittest) {
 
 alias GraphModelStore = GraphModelInterface[];
 
+/// Adds a model to the store if it does not already exist.
+void addUnique(ref GraphModelStore store, GraphModelInterface model) {
+    foreach (exist; store) if (exist is model) return; 
+    store ~= model;
+}
+
+
 /// Mixes in modelStore functionality 
 mixin template GraphModelStoreImplementation() {
 	/// Returns the modelStore for the given model type
@@ -226,16 +233,16 @@ mixin template GraphModelStoreImplementation() {
 		return _graphModelStores[storeName];
 	}
 
+	/// ditto
+	ref GraphModelStore modelStore(M)() {
+		return modelStore(M.stringof);
+	}
+
 	/// Returns the total number of models across all stores
 	ulong modelCount() const {
 		ulong count;
 		foreach(store; _graphModelStores) count += store.length;
 		return count;
-	}
-
-	/// ditto
-	ref GraphModelStore modelStore(M)() {
-		return modelStore(M.stringof);
 	}
 
 	/// Clears all data from the modelStores

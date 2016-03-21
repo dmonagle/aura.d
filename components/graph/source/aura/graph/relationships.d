@@ -91,49 +91,78 @@ mixin template GraphBelongsTo(L, M, string propertyName = "", string key = "", s
 
 */
 
-version (unittest) {
-	class GraphTestUser : GraphModelInterface {
-		mixin GraphModelImplementation;
+// version (unittest) {
+// 	class GraphTestUser : GraphModelInterface {
+// 		mixin GraphModelImplementation;
 		
-		string id;
-		string name;
-        string bestFriendId;
+// 		string id;
+// 		string name;
+//         string bestFriendId;
 
-		override @property string graphId() const { return id; }
-		override @property void graphId(string newId) { id = newId; }
+// 		override @property string graphId() const { return id; }
+// 		override @property void graphId(string newId) { id = newId; }
         
-        mixin GraphBelongsTo!(GraphTestUser, GraphTestUser, "bestFriend", "bestFriendId", "id");        
-	}
+//         mixin GraphBelongsTo!(GraphTestUser, GraphTestUser, "bestFriend", "bestFriendId", "id");        
+// 	}
 	
-	unittest {
-        auto graph = new Graph;
+// 	unittest {
+//         auto graph = new Graph;
         
-		auto david = graph.inject(new GraphTestUser);
-        david.id = "0";
-		david.name = "David";
+// 		auto david = graph.inject(new GraphTestUser);
+//         david.id = "0";
+// 		david.name = "David";
 
-		auto mia = graph.inject(new GraphTestUser);
-        mia.id = "1";
-		mia.name = "Mia";
-		mia.bestFriendId = "0";
+// 		auto mia = graph.inject(new GraphTestUser);
+//         mia.id = "1";
+// 		mia.name = "Mia";
+// 		mia.bestFriendId = "0";
 
-        assert(!mia.bestFriend.resolved);
-        assert(mia.bestFriend.name == "David");
-        assert(mia.bestFriend.resolved);
-	}
+//         assert(!mia.bestFriend.resolved);
+//         assert(mia.bestFriend.name == "David");
+//         assert(mia.bestFriend.resolved);
+// 	}
 	
-	unittest {
-        auto graph = new Graph;
+// 	unittest {
+//         auto graph = new Graph;
         
-		auto david = graph.inject(new GraphTestUser);
-        david.id = "0";
-		david.name = "David";
+// 		auto david = graph.inject(new GraphTestUser);
+//         david.id = "0";
+// 		david.name = "David";
 
-		auto mia = graph.inject(new GraphTestUser);
-        mia.id = "1";
-		mia.name = "Mia";
+// 		auto mia = graph.inject(new GraphTestUser);
+//         mia.id = "1";
+// 		mia.name = "Mia";
 
-        mia.bestFriend.value = david;
-        assert(mia.bestFriendId == "0");
-	}
+//         mia.bestFriend.value = david;
+//         assert(mia.bestFriendId == "0");
+// 	}
+// }
+
+string defineGraphHasManyProperty(P : GraphModelInterface, M : GraphModelInterface, string propertyName, string query)() {
+	import std.format;
+	
+	static if (!propertyName.length) 
+		enum _propertyName = M.stringof.camelCaseLower;
+	else
+		enum _propertyName = propertyName;
+        
+    enum _resolverTypeName = _propertyName.camelCaseUpper ~ "Resolver";
+    enum _resolverName = "_" ~ _propertyName;
+	
+	return format(`
+        private alias %5$s = GraphResolver!(%2$s[]);
+        private %5$s %6$s;
+        auto %3$s() {
+            if (!%6$s) {
+                return new %5$s(() {
+                    return %4$s;
+                });
+            }
+            return %6$s;
+        }
+	`, P.stringof, M.stringof, _propertyName, query, _resolverTypeName, _resolverName);
+}
+
+mixin template GraphHasMany(P : GraphModelInterface, M : GraphModelInterface, string propertyName = "", string query) {
+	mixin(defineGraphHasManyProperty!(P, M, propertyName, query));
 }
