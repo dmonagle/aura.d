@@ -11,6 +11,7 @@ import aura.graph.value.value;
 import vibe.data.json;
 
 import std.bigint;
+import std.typetuple;
 
 import std.conv;
 
@@ -83,4 +84,38 @@ unittest {
 GraphValue toGraphValue(T)(T value) 
 if (GraphValue.holdsType!T) {
 	return GraphValue(value);
+}
+
+Json toJson(const GraphValue value) {
+	if (value.isNull) {
+		return Json(null);
+	}
+	if (value.isObject) {
+		auto json = Json.emptyObject;
+		foreach(k, v; value.get!(GraphValue.Object)) json[k] = v.toJson;
+		return json;
+	}
+	else if (value.isArray) {
+        auto json = Json.emptyArray;
+		foreach(v; value.castArray) json ~= v.toJson;
+		return json;
+	}
+
+	foreach(Type; GraphBasicTypes) {
+		if (value.isType!Type) return value.get!Type.serializeToJson;
+	}
+
+	return Json(null);
+}
+
+unittest {
+    void toJsonTest(T)(T value, Json.Type jsonType) {
+        GraphValue v = GraphValue(value);
+        assert(v.toJson.type == jsonType);
+        assert(v.toJson == Json(value));
+    }
+    
+    toJsonTest(null, Json.Type.null_);
+    toJsonTest(true, Json.Type.bool_);
+    toJsonTest(10.2, Json.Type.float_);
 }
