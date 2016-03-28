@@ -1,4 +1,7 @@
-﻿module aura.graph.value.attribute_tree;
+﻿/**
+    An attempt at making an attribute tree as as struct. Not in use at the moment
+*/
+module aura.graph.value.attribute_tree;
 
 import std.string;
 import std.exception : enforce;

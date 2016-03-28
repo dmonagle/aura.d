@@ -219,9 +219,10 @@ version (unittest) {
 alias GraphModelStore = GraphModelInterface[];
 
 /// Adds a model to the store if it does not already exist.
-void addUnique(ref GraphModelStore store, GraphModelInterface model) {
-    foreach (exist; store) if (exist is model) return; 
+bool addUnique(ref GraphModelStore store, GraphModelInterface model) {
+    foreach (exist; store) if (exist is model) return false; 
     store ~= model;
+    return true;
 }
 
 
