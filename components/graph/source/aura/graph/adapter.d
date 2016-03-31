@@ -41,6 +41,9 @@ class GraphAdapter(Models ...) : GraphAdapterInterface {
 	/// Access the Graph instance associated with this adapter
 	@property Graph graph() { return _graph; }
 
+	/// Set the Graph instance associated with this adapter
+	@property void graph(Graph value) { _graph = value; }
+
 	/// Return the name of the container to be used for the given modelName
 	/// by default this returns the typename verbatim. This method can be overridden to return custom containerNames
 	string containerNameFor(string typeName) {
