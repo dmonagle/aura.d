@@ -6,6 +6,7 @@ import aura.graph;
 
 import vibe.core.log;
 import vibe.inet.url;
+import std.string;
 
 /// Elasticsearch adapter for Graph
 class GraphElasticsearchAdapter(M ...) : GraphAdapter!M {
@@ -107,22 +108,117 @@ class GraphElasticsearchAdapter(M ...) : GraphAdapter!M {
 		}
 	}
 
+    /// Deserialize the given data back to a GraphModelInterface object
+	GraphModelInterface deserializeHit(string graphType, Json data) {
+		import std.format;
+
+        auto source = data["_source"];
+        if (source.type != Json.Type.object) return null;
+        
+		switch (graphType) {
+			foreach(ModelType; Models) {
+				case ModelType.stringof:
+                    ModelType model;
+                    model.deserializeJson(source);
+                    model.graphId = data["_id"].get!string;
+                    return model;
+			}
+			default: assert(false, format("Type '%s' not supported by adapter", graphType));
+		}
+	}
+
+    /// Iterates over the hits in the given json response, deserializes the model and calls the callback for each deserialized `M`
+    void deserializeHits(string graphType, Json responseJson, void delegate(GraphModelInterface, Json) callback) {
+        // The response should contain a hits object
+        auto hitsJson = responseJson["hits"]; 
+        if (hitsJson.type != Json.Type.object) return;
+        
+        // The hitsJson should contain a hits array
+        auto hits = hitsJson["hits"];
+        if (hits.type != Json.Type.array) return;
+        
+        foreach(hit; hits) {
+			auto result = deserializeHit(graphType, hit);
+            callback(result, hit);
+        }
+    }
+
+    /// ditto
+    void deserializeHits(M : GraphModelInterface)(Json responseJson, void delegate(M, Json) callback) {
+        deserializeHits(M.stringof, responseJson, (model, meta) {
+            callback(cast(M)model, meta);
+        });
+    }
+    
+    /// ditto
+    auto deserializeHits(M : GraphModelInterface)(Json responseJson) {
+		M[] _results;
+
+        deserializeHits(M.stringof, responseJson, (model, meta) {
+            _results ~= cast(M)model;
+        });
+        
+        return _results;
+    }
+    
+    /// Injects hits into the graph. 
+	M[] injectHits(M : GraphModelInterface)(Json hits, bool snapshot = true) 
+	in {
+		assert(graph);
+	}
+	body {
+		M[] _results;
+
+        injectHits!M(hits, (model, meta) {
+			_results ~= model;
+		}, snapshot);
+
+		return _results;
+	}
+    
+    // Calls get directly on elasticsearch and deserializes the model
+    M get(M : GraphModelInterface)(string id, bool snapshot = true)
+    in {
+        assert(graph, "Called get on elasticsearch adapter without a graph set");
+    } 
+    body {
+        import elasticsearch.api.actions.get;
+        auto response = client.get(containerNameFor(M.stringof), id);
+        
+        auto jsonResponse = response.jsonBody;
+        // import std.stdio;
+        // writefln("%s", jsonResponse.toPrettyString);
+
+        if (jsonResponse["found"].get!bool) {
+            return graph.inject(cast(M)deserializeHit(M.stringof, jsonResponse), snapshot);
+        }
+        
+        return null;
+    }
 
 	override GraphModelInterface[] graphFind(string graphType, string key, GraphValue value, uint limit = 0) {
 		GraphModelInterface[] results;
 
-		/*
-		auto cursor = getCollection(graphType).find([key: value.toBson]);
-		if (limit) cursor.limit(limit);
+        ESParams params;
 		
-		while (!cursor.empty) {
-			auto bson = cursor.front;
-			auto result = deserialize(graphType, bson);
+        auto limitQuery = limit ? format(`,"size":%s`, limit) : "";
+        params["body"] = format(`{"query":{"term":{"%s": "%s"}}%s}`, key, value, limitQuery);
+        //params["body"] = `{"query":{"match_all": {}}}`;
+		params["index"] = containerNameFor(graphType);
+	    params["type"] = graphType;
+		
+		import std.stdio;
+        writefln("Query: %s", params["body"]);
+        writefln("Container: %s", params["index"]);
+		auto response = client.search(params);
+        writefln("%s", response.jsonBody);
+
+        foreach(hit; response.jsonBody["hits"]["hits"]) {
+			auto result = deserializeHit(graphType, hit);
 			result.graphPersisted = true;
+            result.graphUntouch;
 			results ~= result;
-			cursor.popFront;
-		}
-		*/
+        }
 
 		return results;
 	}
