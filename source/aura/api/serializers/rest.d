@@ -70,9 +70,6 @@ class RestApiSerializer : BaseApiSerializer
     }
     
     override GraphValue serialize() {
-        import std.stdio;
-        import colorize;
-            
         auto unprepared = array(_modelSerializers.values.filter!((s) => !s.preparedForSerialization));
         while (unprepared.length) {
             foreach(s; unprepared) {
@@ -83,9 +80,7 @@ class RestApiSerializer : BaseApiSerializer
         }
 
         auto value = GraphValue.emptyObject;
-        writefln("modelStores");
         foreach(string modelType, store; _graphModelStores) {
-            writefln("%s %s", modelType.color(fg.light_blue), store.length);
             auto serializer = modelSerializer(modelType);
             assert(serializer, "No serializer loaded for modelType: " ~ modelType);
 
