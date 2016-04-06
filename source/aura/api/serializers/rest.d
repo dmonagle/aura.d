@@ -50,12 +50,21 @@ class RestApiSerializer : BaseApiSerializer
             s.preparedForSerialization = false;
     }
 
+    void addModels(M : GraphModelInterface)(M[] models) {
+        foreach(model; models) addModel!M(model);
+    } 
+
     void addModel(S : BaseApiSerializer, M : GraphModelInterface)(M model) 
     {
         auto s = modelSerializer!(M, S);
+        // This could just defer to the above
         if (modelStore!M.addUnique(model))
             s.preparedForSerialization = false;
     }
+    
+    void addModels(S : BaseApiSerializer, M : GraphModelInterface)(M[] models) {
+        foreach(model; models) addModel!(S,M)(model);
+    } 
         
     void makePrimary(string modelType) {
         _primaryType = modelType;
@@ -73,8 +82,8 @@ class RestApiSerializer : BaseApiSerializer
         auto unprepared = array(_modelSerializers.values.filter!((s) => !s.preparedForSerialization));
         while (unprepared.length) {
             foreach(s; unprepared) {
-                s.prepareForSerialization;
-                assert(s.preparedForSerialization, "Serializer not prepared for serialization right after prepareForSerialization was called");
+                s.preSerialization;
+                assert(s.preparedForSerialization, "Serializer not prepared for serialization right after preSerialization was called");
             }
             unprepared = array(_modelSerializers.values.filter!((s) => !s.preparedForSerialization));
         }
