@@ -84,7 +84,7 @@ class RestApiSerializer : BaseApiSerializer
             auto serializer = modelSerializer(modelType);
             assert(serializer, "No serializer loaded for modelType: " ~ modelType);
 
-            if (auto modelSerializer = cast(ApiModelSerializerInterface)serializer) {
+            if (auto modelSerializer = cast(RestApiModelSerializerInterface)serializer) {
                 GraphValue.Array serializedModels;
                 foreach(model; store) {
                     modelSerializer.model = model;
@@ -124,12 +124,12 @@ unittest {
     assert(s1.primaryType == "");
 }
 
-interface ApiModelSerializerInterface {
+interface RestApiModelSerializerInterface {
     @property GraphModelInterface model();
     @property void model(GraphModelInterface value);
 }
 
-class ApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, ApiModelSerializerInterface {
+class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestApiModelSerializerInterface {
 	void filter() {}
 	
 	@property AttributeTree updateFilter() { 
@@ -230,7 +230,7 @@ version (unittest) {
 		@optional TestJob job;
 	}
 	
-	class TestUserSerializer : ApiModelSerializer!(TestUser, TestUser) {
+	class TestUserSerializer : RestApiModelSerializer!(TestUser, TestUser) {
 		override void filter() {
 			accessFilter.add("salary", "job.title");
 			updateFilter.add("firstName", "surname", "job.level");
