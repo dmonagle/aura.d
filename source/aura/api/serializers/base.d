@@ -18,7 +18,7 @@ interface ApiSerializerInterface
     @property bool preparedForSerialization();
     @property void preparedForSerialization(bool);
     
-    void prepareForSerialization();
+    void preSerialization();
     GraphValue serialize();
 }
 
@@ -46,7 +46,7 @@ class BaseApiSerializer {
     @property bool preparedForSerialization() { return _preparedForSerialization; }
     @property void preparedForSerialization(bool value) { _preparedForSerialization = value; }
     
-    void prepareForSerialization() { preparedForSerialization = true; }
+    void preSerialization() { preparedForSerialization = true; }
     GraphValue serialize() { return GraphValue.emptyObject; }
 
 protected:
