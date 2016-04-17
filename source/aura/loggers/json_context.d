@@ -6,6 +6,8 @@ import aura.data.json;
 import std.uuid;
 import std.stdio;
 import std.regex;
+import std.path;
+import std.file;
 
 struct LoggerContext {
     Json context;
@@ -81,9 +83,14 @@ final class JsonContextLogger : Logger {
 		_logFile.writeln(logJson.toString);
 		_logFile.flush;
 	}
-
+    
 	void openLogForToday(Date date = cast(Date)Clock.currTime) {
 		import std.format;
+        
+        // Create the directory if it doesn't exist
+        auto logPath = _baseFileName.dirName;
+        if (!logPath.exists) mkdirRecurse(logPath);
+        
 		_logFile = File(format("%s-%s.log", _baseFileName, date.toISOExtString), "a");
 
 	}
