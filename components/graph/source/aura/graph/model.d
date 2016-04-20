@@ -60,11 +60,15 @@ interface GraphModelInterface : GraphInstanceInterface {
 	@property inout(GraphModelInterface) graphParent() inout;
 	@property void graphParent(GraphModelInterface value);
 
-	
+	// Snapshots
 	bool graphHasSnapshot() const;
 	void clearGraphSnapshot();
 	@property ref GraphValue graphSnapshot();
 	@property GraphValue graphSnapshot() const;
+	
+	// Meta 
+	@property ref GraphValue graphMeta();
+	@property GraphValue graphMeta() const;
 }
 
 
@@ -100,23 +104,33 @@ mixin template GraphModelImplementation() {
 	@property void graphParent(GraphModelInterface value) { _graphParent = value; }
 
 	bool graphHasSnapshot() const {
-		return _snapshot.isNull ? false : true;
+		return _graphSnapshot.isNull ? false : true;
 	}
 	
 	void clearGraphSnapshot() {
-		_snapshot = null;
+		_graphSnapshot = null;
 	}
 	
 	@ignore @property ref GraphValue graphSnapshot() {
-		return _snapshot;
+		return _graphSnapshot;
 	}
 	
 	@property GraphValue graphSnapshot() const {
-		return _snapshot;
+		return _graphSnapshot;
+	}
+	
+	@ignore @property ref GraphValue graphMeta() {
+		if (!_graphMeta.isObject) _graphMeta = GraphValue.emptyObject;
+		return _graphMeta;
+	}
+	
+	@property GraphValue graphMeta() const {
+		return _graphMeta;
 	}
 	
 private:
-	GraphValue _snapshot;
+	GraphValue _graphSnapshot;
+	GraphValue _graphMeta;
 	GraphModelInterface _graphParent;
 	bool _graphPersisted;
 	bool _graphSynced;
