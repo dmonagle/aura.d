@@ -90,7 +90,7 @@ class GraphElasticsearchAdapter(M ...) : GraphAdapter!M {
 		
 		return response.jsonBody;
 	}
-
+	
 	/// Deletes the model from elasticsearch
 	bool _delete(GraphModelInterface model) {
 		auto index = containerNameFor(model.graphType);
@@ -160,20 +160,55 @@ class GraphElasticsearchAdapter(M ...) : GraphAdapter!M {
         
         return _results;
     }
+
+	void injectHits(M : GraphModelInterface)(Json responseJson, void delegate(M, Json) callback, bool snapshot = true) {
+		deserializeHits!M(responseJson, (model, meta){
+			graph.inject(model, snapshot);		
+			callback(model, meta);
+		});
+	} 
     
     /// Injects hits into the graph. 
-	M[] injectHits(M : GraphModelInterface)(Json hits, bool snapshot = true) 
+	M[] injectHits(M : GraphModelInterface)(Json responseJson, bool snapshot = true) 
 	in {
 		assert(graph);
 	}
 	body {
 		M[] _results;
 
-        injectHits!M(hits, (model, meta) {
+        injectHits!M(responseJson, (model, meta) {
 			_results ~= model;
 		}, snapshot);
 
 		return _results;
+	}
+
+	
+	void injectSearch(M : GraphModelInterface)(string searchBody, ESParams params, void delegate(GraphModelInterface, Json) callback, bool snapshot = true) 
+	in {
+		assert(graph);
+	}
+	body {
+		auto jsonResponse = search!M(searchBody, params);
+		
+		injectHits!M(jsonResponse, (model, meta) {
+			callback(model, meta);
+		}, snapshot);
+	}
+
+	/// ditto	
+	void injectSearch(M : GraphModelInterface)(string searchBody, void delegate(GraphModelInterface, Json) callback, bool snapshot = true) {
+		injectSearch!M(searchBody, ESParams(), callback, snapshot);
+	}
+	
+	M[] injectSearch(M : GraphModelInterface)(string searchBody, ESParams params = ESParams()) {
+		M[] _results;
+
+        injectSearch!M(searchBody, params, (model, meta) {
+            _results ~= cast(M)model;
+        });
+        
+        return _results;
 	}
     
     // Calls get directly on elasticsearch and deserializes the model
