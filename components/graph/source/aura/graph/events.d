@@ -12,8 +12,6 @@ interface GraphEventListener : GraphInstanceInterface {
 }
 
 mixin template GraphEventListenerImplementation() {
-	mixin GraphInstanceImplementation;
-
 	void graphWillSync() {}
 	void modelWillSave(GraphModelInterface) {}
 	void modelDidSave(GraphModelInterface) {}

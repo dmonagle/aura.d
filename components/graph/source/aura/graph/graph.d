@@ -42,8 +42,17 @@ protected:
 }
 
 /// Main storage class for Graph
-class Graph {
+class Graph : GraphEventListener {
 	mixin GraphModelStoreImplementation;
+	mixin GraphEventListenerImplementation;
+	
+	this() {
+		registerGraphEventListener(this);
+	}
+	
+	// As the graph is an event listener of itself, it needs to implement the GraphInstanceInterface 
+	@ignore @property inout(Graph) graph() inout { return this; }
+	@property void graph(Graph value) {}
 	
 	/// Injects a model into the graph, optionally initiating a snapshot
 	/// If the model already exists in the graph, the original is returned unless replace is true

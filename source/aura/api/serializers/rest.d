@@ -57,7 +57,7 @@ class RestApiSerializer : BaseApiSerializer
         foreach(model; models) addModel!M(model);
     } 
 
-    void addModel(S : BaseApiSerializer, M : GraphModelInterface)(M model)
+    auto addModel(S : BaseApiSerializer, M : GraphModelInterface)(M model)
     in {
         assert(model, "Attempted to add null " ~ M.stringof ~ " to serializer: " ~ S.stringof);
     } 
@@ -66,6 +66,7 @@ class RestApiSerializer : BaseApiSerializer
         // This could just defer to the above
         if (modelStore!M.addUnique(model))
             s.preparedForSerialization = false;
+        return s;
     }
     
     void addModels(S : BaseApiSerializer, M : GraphModelInterface)(M[] models) {

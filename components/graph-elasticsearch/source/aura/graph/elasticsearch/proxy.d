@@ -10,6 +10,7 @@ import vibe.core.log;
 class ElasticsearchIndexProxy(Adapter : GraphAdapterInterface) : GraphEventListener {
 	mixin GraphEventListenerImplementation;
 	mixin GraphModelStoreImplementation;
+	mixin GraphInstanceImplementation;
 
 	Adapter esAdapter;
 
