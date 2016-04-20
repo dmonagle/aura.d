@@ -43,7 +43,10 @@ class RestApiSerializer : BaseApiSerializer
     } 
 
     void addModel(M : GraphModelInterface)(M model) 
-    {
+    in {
+        assert(model, "Attempted to add null " ~ M.stringof ~ " to serializer");
+    } 
+    body {
         if (!modelCount) makePrimary!M; // If this is the first model added, make it the primary type
         auto s = modelSerializer!M;
         if (modelStore!M.addUnique(model)) 
@@ -54,8 +57,11 @@ class RestApiSerializer : BaseApiSerializer
         foreach(model; models) addModel!M(model);
     } 
 
-    void addModel(S : BaseApiSerializer, M : GraphModelInterface)(M model) 
-    {
+    void addModel(S : BaseApiSerializer, M : GraphModelInterface)(M model)
+    in {
+        assert(model, "Attempted to add null " ~ M.stringof ~ " to serializer: " ~ S.stringof);
+    } 
+    body {
         auto s = modelSerializer!(M, S);
         // This could just defer to the above
         if (modelStore!M.addUnique(model))
@@ -94,6 +100,7 @@ class RestApiSerializer : BaseApiSerializer
             assert(serializer, "No serializer loaded for modelType: " ~ modelType);
 
             if (auto modelSerializer = cast(RestApiModelSerializerInterface)serializer) {
+                assert(serializer.preparedForSerialization, "Serializer not prepared for serialization: " ~ typeid(serializer).toString);
                 GraphValue.Array serializedModels;
                 foreach(model; store) {
                     modelSerializer.model = model;
