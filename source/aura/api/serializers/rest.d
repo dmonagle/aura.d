@@ -122,24 +122,24 @@ private:
 }
 
 // Test the parent and root attributes
-unittest {
+// unittest {
 
-    auto s1 = new RestApiSerializer;
-    auto s2 = new ApiSerializer;
-    auto s3 = new ApiSerializer;
+//     auto s1 = new RestApiSerializer;
+//     auto s2 = new ApiSerializer;
+//     auto s3 = new ApiSerializer;
     
-    s2.parent = s1;
-    s3.parent = s2;
+//     s2.parent = s1;
+//     s3.parent = s2;
     
-    assert(!s1.parent, "s1 should have no parent");
-    assert(s1.root == s1);
-    assert(s2.parent == s1);
-    assert(s2.root == s1);
-    assert(s3.parent == s2);
-    assert(s3.root == s1);
+//     assert(!s1.parent, "s1 should have no parent");
+//     assert(s1.root == s1);
+//     assert(s2.parent == s1);
+//     assert(s2.root == s1);
+//     assert(s3.parent == s2);
+//     assert(s3.root == s1);
     
-    assert(s1.primaryType == "");
-}
+//     assert(s1.primaryType == "");
+// }
 
 interface RestApiModelSerializerInterface {
     @property GraphModelInterface model();

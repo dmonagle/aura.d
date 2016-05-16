@@ -3,21 +3,177 @@ description "A framework that sits around vibe.d"
 copyright "Copyright © 2016, David Monagle"
 authors "David Monagle"
 license "MIT"
-targetType "library"
 
-dependency "vibe-d" version="~>0.7.25"
-dependency "elasticsearch-d" version="~>1.0.2"
-dependency "feature-test-d" version="~>1.0.1"
-dependency "dyaml" version="~>0.5.1"
+targetType "library"
+targetPath "build"
+sourcePaths
+
+dependency ":api" version="*"
+subPackage {
+    name "api"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/api"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "vibe-d" version="~>0.7.25"
+    dependency "aura:graph" version="*"
+    dependency "aura:data" version="*"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":controllers" version="*"
+subPackage {
+    name "controllers"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/controllers"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "aura:data" version="*"
+    dependency "string-transform-d" version="~>1.0.0"
+    dependency "elasticsearch-d" version="~>1.0.4"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":loggers" version="*"
+subPackage {
+    name "loggers"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/loggers"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "aura:data" version="*"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":query" version="*"
+subPackage {
+    name "query"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/query"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "aura:data" version="*"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":queues" version="*"
+subPackage {
+    name "queues"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/queues"
+    importPaths "source"
+    targetPath "build"
+
+
+    dependency "vibe-d" version="~>0.7.25"
+    dependency "colorize" version="~>1.0.5"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":util" version="*"
+subPackage {
+    name "util"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/util"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "vibe-d" version="~>0.7.25"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":security" version="*"
+subPackage {
+    name "security"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/security"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "vibe-d" version="~>0.7.25"
+    dependency "colorize" version="~>1.0.5"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":services" version="*"
+subPackage {
+    name "services"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/services"
+    importPaths "source"
+    targetPath "build"
+    
+    dependency "aura:data" version="*"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":data" version="*"
+subPackage {
+    name "data"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/data"
+    importPaths "source"
+    targetPath "build"
+    
+    dependency "vibe-d" version="~>0.7.25"
+    dependency "colorize" version="~>1.0.5"
+    dependency "feature-test-d" version="~>1.0.3"
+}
 
 dependency ":graph" version="*"
-dependency ":graph-mongodb" version="*"
-dependency ":graph-elasticsearch" version="*"
-dependency ":util" version="*"
-dependency ":data" version="*"
+subPackage {
+    name "graph"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/graph"
+    importPaths "source"
+    targetPath "build"
 
-subPackage "./components/util"
-subPackage "./components/data"
-subPackage "./components/graph"
-subPackage "./components/graph-mongodb"
-subPackage "./components/graph-elasticsearch"
+    dependency "aura:util" version="*"
+    dependency "vibe-d" version="~>0.7.25"
+    dependency "string-transform-d" version="~>1.0.0"
+    dependency "colorize" version="~>1.0.5"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":graph-mongodb" version="*"
+subPackage {
+    name "graph-mongodb"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/graph-mongodb"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "aura:graph" version="*"
+    dependency "vibe-d" version="~>0.7.25"
+    dependency "feature-test-d" version="~>1.0.3"
+}
+
+dependency ":graph-elasticsearch" version="*"
+subPackage {
+    name "graph-elasticsearch"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/graph-elasticsearch"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "aura:graph" version="*"
+    dependency "aura:data" version="*"
+    dependency "elasticsearch-d" version="~>1.0.4"
+    dependency "feature-test-d" version="~>1.0.3"
+}

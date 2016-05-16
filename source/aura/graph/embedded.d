@@ -1,10 +1,10 @@
 ﻿module aura.graph.embedded;
 
 import aura.graph.serialization;
+import aura.util.null_bool;
 
 import std.typetuple;
 import std.traits;
-import aura.util.null_bool;
 
 struct GraphEmbeddedAttribute {
 }
