@@ -7,6 +7,7 @@ license "MIT"
 targetType "library"
 targetPath "build"
 sourcePaths
+importPaths "source"
 
 dependency ":api" version="*"
 subPackage {
@@ -154,8 +155,8 @@ subPackage {
     name "graph-mongodb"
     description ""
     targetType "library"
-    sourcePaths "source/aura/graph-mongodb"
-    importPaths "source"
+    sourcePaths "modules/graph-mongodb"
+    importPaths "modules/graph-mongodb"
     targetPath "build"
 
     dependency "aura:graph" version="*"
@@ -168,8 +169,8 @@ subPackage {
     name "graph-elasticsearch"
     description ""
     targetType "library"
-    sourcePaths "source/aura/graph-elasticsearch"
-    importPaths "source"
+    sourcePaths "modules/graph-elasticsearch"
+    importPaths "modules/graph-elasticsearch"
     targetPath "build"
 
     dependency "aura:graph" version="*"
