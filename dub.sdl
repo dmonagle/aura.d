@@ -24,6 +24,19 @@ subPackage {
     dependency "feature-test-d" version="~>1.0.3"
 }
 
+dependency ":configuration" version="*"
+subPackage {
+    name "configuration"
+    description ""
+    targetType "library"
+    sourcePaths "source/aura/configuration"
+    importPaths "source"
+    targetPath "build"
+
+    dependency "vibe-d" version="~>0.7.25"
+    dependency "aura:data" version="*"
+}
+
 dependency ":controllers" version="*"
 subPackage {
     name "controllers"
