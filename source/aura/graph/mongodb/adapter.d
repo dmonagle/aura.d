@@ -84,7 +84,7 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 	
 	Bson dropCollection(string collection) {
 		auto command = Bson.emptyObject;
-		command.drop = collection;
+		command["drop"] = collection;
 		return database.runCommand(command);
 	}
 

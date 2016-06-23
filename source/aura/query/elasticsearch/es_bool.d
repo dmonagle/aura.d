@@ -7,13 +7,13 @@ class EsBool : JsonBuilderBase {
 	
 	this() {
 		_json = Json.emptyObject;
-		_json.must = Json.emptyArray;
-		_json.must_not = Json.emptyArray;
-		_json.should = Json.emptyArray;
+		_json["must"] = Json.emptyArray;
+		_json["must_not"] = Json.emptyArray;
+		_json["should"] = Json.emptyArray;
 	}
 	
 	EsBool must(T : Json)(T criteria) {
-		_json.must ~= criteria;
+		_json["must"] ~= criteria;
 		return this;
 	}
 	
@@ -26,7 +26,7 @@ class EsBool : JsonBuilderBase {
 	}
 	
 	EsBool must_not(T : Json)(T criteria) {
-		_json.must_not ~= criteria;
+		_json["must_not"] ~= criteria;
 		return this;
 	}
 	
@@ -39,7 +39,7 @@ class EsBool : JsonBuilderBase {
 	}
 	
 	EsBool should(T : Json)(T criteria) {
-		_json.should ~= criteria;
+		_json["should"] ~= criteria;
 		return this;
 	}
 	
@@ -52,18 +52,18 @@ class EsBool : JsonBuilderBase {
 	}
 	
 	@property bool empty() {
-		if (_json.must.length) return false;
-		if (_json.must_not.length) return false;
-		if (_json.should.length) return false;
+		if (_json["must"].length) return false;
+		if (_json["must_not"].length) return false;
+		if (_json["should"].length) return false;
 		return true;
 	}
 	
 	override @property Json json() {
 		auto j = Json.emptyObject;
 		
-		if (_json.must.length) j.must = _json.must;
-		if (_json.must_not.length) j.must_not = _json.must_not;
-		if (_json.should.length) j.should = _json.should;
+		if (_json["must"].length) j["must"] = _json["must"];
+		if (_json["must_not"].length) j["must_not"] = _json["must_not"];
+		if (_json["should"].length) j["should"] = _json["should"];
 		
 		return j;
 	}

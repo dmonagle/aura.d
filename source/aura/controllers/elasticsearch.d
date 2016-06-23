@@ -8,10 +8,10 @@ import elasticsearch;
 Json extractElasticsearchResults(Json searchResults, string key, ref PaginationMeta pagination) {
 	auto jsonRecords = Json.emptyArray;
 	
-	pagination.records = searchResults.hits.total.to!int;
+	pagination.records = searchResults["hits"]["total"].to!int;
 	
 	
-	foreach(hit; searchResults.hits.hits) {
+	foreach(hit; searchResults["hits"]["hits"]) {
 		auto jsonRecord = hit["_source"];
 		jsonRecord["_score"] = hit["_score"];
 		jsonRecord["_id"] = hit["_id"];
@@ -20,9 +20,9 @@ Json extractElasticsearchResults(Json searchResults, string key, ref PaginationM
 	}
 	
 	auto json = jsonRecords.wrap(key);
-	json.meta = Json.emptyObject;
-	json.meta.pagination = pagination.serializeToJson;
-	json.meta.aggregations = searchResults.aggregations;
+	json["meta"] = Json.emptyObject;
+	json["meta"]["pagination"] = pagination.serializeToJson;
+	json["meta"]["aggregations"] = searchResults["aggregations"];
 	
 	return json;
 }
