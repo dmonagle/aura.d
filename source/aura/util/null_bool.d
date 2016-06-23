@@ -2,6 +2,7 @@
 
 public import std.typecons;
 import std.traits;
+import vibe.data.json;
 
 bool isTrue(T)(T b) {
 	if (b.isNull) return false;
@@ -36,7 +37,7 @@ unittest {
 	assert(!isFalse(nb));
 }
 
-bool isNull(T)(ref T value) {
+bool isNull(T)(T value) {
 	static if (is(T == class))
 		return value ? false : true;
 	else static if (hasMember!(T, "isNull"))
@@ -44,6 +45,11 @@ bool isNull(T)(ref T value) {
 	else 
 		return false;
 }
+
+bool isNull(T : Json)(T value) {
+	return (value.type == Json.Type.null_);
+}
+
 
 bool isNotNull(T)(T value) {
 	return !isNull(value);
