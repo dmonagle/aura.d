@@ -163,7 +163,7 @@ struct SendResult {
 	string email;
 	/// the reason for the rejection if the recipient status is "rejected"
 	/// one of "hard-bounce", "soft-bounce", "spam", "unsub", "custom", "invalid-sender", "invalid", "test-mode-limit", or "rule"
-	Nullable!string reject_reason;
+	@optional Nullable!string reject_reason;
 	
 	/// the message's unique id
 	string _id;
