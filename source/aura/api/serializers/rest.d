@@ -1,10 +1,7 @@
 module aura.api.serializers.rest;
 
 import aura.api.serializers.base;
-import aura.graph;
-import aura.data.json;
-
-import aura.data.json;
+import aura.graph.value;
 import aura.graph.model;
 
 import std.array;
@@ -18,6 +15,13 @@ class RestApiSerializer : BaseApiSerializer
     
     @property GraphModelInterface context() { return _context; }
     @property void context(GraphModelInterface value) { _context = value; }
+
+    this() {
+    }
+
+    this(GraphModelInterface context) {
+        this.context = context; 
+    }
 
     auto modelSerializer(M : GraphModelInterface, S : BaseApiSerializer)() 
     {
@@ -171,25 +175,35 @@ class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestA
     /// Returns the model store from the root api serializer for this model
     @property auto modelStore() { return (cast(RestApiSerializer)root).modelStore!M; }
 
-    /// Returns a copy of the given json with the access filters applied
-	GraphValue filterAccess(GraphValue value) {
+    /// Returns a GraphValue of the given value with the access filters applied
+	GraphValue filterAccess(T)(T value) {
+        static if (is(T == GraphValue)) 
+            alias gValue = value;
+        else  
+            auto gValue = toGraphValue(value);
+
 		if (_accessWhiteList) 
-			return value.filterIn(_accessAttributes);
+			return gValue.filterIn(_accessAttributes);
 		else 
-			return value.filterOut(_accessAttributes);
+			return gValue.filterOut(_accessAttributes);
 		
 	}
 	
-	/// Returns a copy of the given json with the update filters applied, ie: only fields updatable should be included
-	GraphValue filterUpdate(GraphValue value) {
+	/// Returns a GraphvValue of the given value with the update filters applied, ie: only fields updatable should be included
+	GraphValue filterUpdate(T)(T value) {
+        static if (is(T == GraphValue)) 
+            alias gValue = value;
+        else  
+            auto gValue = toGraphValue(value);
+
 		if (_updateWhiteList)
-			return value.filterIn(_updateAttributes);
+			return gValue.filterIn(_updateAttributes);
 		else			
-			return value.filterOut(_updateAttributes);
+			return gValue.filterOut(_updateAttributes);
 	}
 
-	/// Returns a copy of the given json with both the update and the access filters applied, ie: only fields updatable and accessible by the context should be included
-	GraphValue filter(GraphValue value) {
+	/// Returns a GraphValue of the given value with both the update and the access filters applied, ie: only fields updatable and accessible by the context should be included
+	GraphValue filter(T)(T value) {
         return filterUpdate(filterAccess(value));
 	}
     
