@@ -275,6 +275,17 @@ unittest
 	assert(d["b"] is b);
 }
 
+/// Test Nullable constructor
+unittest {
+	Nullable!string value;
+
+	auto graphValue = GraphValue(value);
+	assert(graphValue.isNull);
+	value = "string";
+	graphValue = GraphValue(value);
+	assert(!graphValue.isNull);
+}
+
 /// Using $(D opt) to quickly access a descendant value.
 unittest
 {
