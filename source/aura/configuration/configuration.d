@@ -6,6 +6,9 @@ import aura.data.json;
 class Configuration(S) {
     alias data this;
     
+    @property string environmentName() { return _environmentName; }
+    @property void environmentName(string value) { _environmentName = value; }
+
     void load() {
 		auto newConfig = loadJsonConfig(configPath, environmentName);
         auto currentConfig = _configData.serializeToJson;
@@ -34,7 +37,7 @@ private:
     S _configData;
     
     string configPath = "config";
-    string environmentName = "development";
+    string _environmentName = "development";
 }
 
 unittest {
