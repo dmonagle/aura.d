@@ -51,13 +51,15 @@ Json loadJsonConfig(string path, string configName) {
 	auto config = Json.emptyObject;
 	auto configFileName = buildPath(path, format("%s.json", configName));
 	
+	// Load the json file that should contain a complete configuration
 	if (configFileName.exists) {
 		auto jsonString = readText(configFileName);
 		config = parseJsonString(jsonString);
 	}
 
+	// Load the directory named after the environment that should contain individual json configuration files
 	auto configPath = buildPath(path, configName);
-	if (configPath.isDir) {
+	if (configPath.exists && configPath.isDir) {
 		foreach(supplementalConfigFileName; dirEntries(configPath, SpanMode.shallow, true)) {
 			if (supplementalConfigFileName.extension == ".json") {
 				auto jsonString = readText(supplementalConfigFileName);
