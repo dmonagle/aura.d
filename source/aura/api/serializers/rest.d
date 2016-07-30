@@ -162,6 +162,9 @@ class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestA
         resetFilters;
     }
 
+    @property ref accessWhiteList() { return _accessWhiteList; }
+    @property ref updateWhiteList() { return _updateWhiteList; }
+
 	@property AttributeTree updateFilter() {
         if (!_updateAttributes) _updateAttributes = new AttributeTree;  
         return _updateAttributes; 

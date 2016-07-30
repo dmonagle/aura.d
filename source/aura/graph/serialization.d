@@ -2,6 +2,8 @@
 module aura.graph.serialization;
 
 import std.typetuple;
+import std.traits;
+
 import vibe.data.serialization;
 import vibe.internal.meta.traits;
 public import vibe.internal.meta.uda;
@@ -10,8 +12,6 @@ package template SerializableFields(COMPOSITE)
 {
 	alias SerializableFields = FilterSerializableFields!(COMPOSITE, __traits(allMembers, COMPOSITE));
 }
-
-package template hasAttribute(T, alias decl) { enum hasAttribute = findFirstUDA!(T, decl).found; }
 
 package template FilterSerializableFields(COMPOSITE, FIELDS...)
 {
@@ -27,7 +27,7 @@ package template FilterSerializableFields(COMPOSITE, FIELDS...)
 			static if (Tup.length != 1) {
 				alias FilterSerializableFields = TypeTuple!(mname);
 			} else {
-				static if (!hasAttribute!(IgnoreAttribute, __traits(getMember, T, mname)))
+				static if (!hasUDA!(IgnoreAttribute, __traits(getMember, T, mname)))
 					alias FilterSerializableFields = TypeTuple!(mname);
 				else alias FilterSerializableFields = TypeTuple!();
 			}
