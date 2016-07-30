@@ -46,15 +46,17 @@ class RestApiSerializer : BaseApiSerializer
         return cast(BaseApiSerializer)null;
     } 
 
-    void addModel(M : GraphModelInterface)(M model) 
+    auto addModel(M : GraphModelInterface)(M model) 
     in {
         assert(model, "Attempted to add null " ~ M.stringof ~ " to serializer");
     } 
     body {
         if (!modelCount) makePrimary!M; // If this is the first model added, make it the primary type
         auto s = modelSerializer!M;
+        assert(s, "attempt to add models but no ApiModelSerializer has been set for type: " ~ M.stringof);
         if (modelStore!M.addUnique(model)) 
             s.preparedForSerialization = false;
+        return s;
     }
 
     void addModels(M : GraphModelInterface)(M[] models) {
@@ -147,19 +149,26 @@ private:
 
 interface RestApiModelSerializerInterface {
     @property GraphModelInterface model();
-    @property void model(GraphModelInterface value);
+    @property void model(GraphModelInterface);
 }
 
 class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestApiModelSerializerInterface {
-	void filter() {}
-	
-	@property AttributeTree updateFilter() { 
-        assert(_updateAttributes, "updateFilter called before reset()");
+    /// This can be overridden to define filters for child classes
+    void defineFilters() 
+	in {
+		assert(model, "defineFilters called with no model set");
+	} 
+    body {
+        resetFilters;
+    }
+
+	@property AttributeTree updateFilter() {
+        if (!_updateAttributes) _updateAttributes = new AttributeTree;  
         return _updateAttributes; 
     }
     
 	@property AttributeTree accessFilter() {
-        assert(_accessAttributes, "accessFilter called before reset()");
+        if (!_accessAttributes) _accessAttributes = new AttributeTree;  
         return _accessAttributes; 
     }
     
@@ -170,18 +179,23 @@ class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestA
     @property GraphModelInterface context() { return restSerializer.context; }
 	
     @property M model() { return _model; }
-    @property void model(GraphModelInterface value) { _model = cast(M)value; reset; }
+    @property void model(GraphModelInterface value) { 
+        _model = cast(M)value; 
+        resetFilters; 
+    }
     
     /// Returns the model store from the root api serializer for this model
     @property auto modelStore() { return (cast(RestApiSerializer)root).modelStore!M; }
 
     /// Returns a GraphValue of the given value with the access filters applied
-	GraphValue filterAccess(T)(T value) {
+	GraphValue filterAccess(T)(T value, bool initFilters = true) {
+        if (initFilters) defineFilters;
         static if (is(T == GraphValue)) 
             alias gValue = value;
         else  
             auto gValue = toGraphValue(value);
 
+        
 		if (_accessWhiteList) 
 			return gValue.filterIn(_accessAttributes);
 		else 
@@ -190,7 +204,8 @@ class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestA
 	}
 	
 	/// Returns a GraphvValue of the given value with the update filters applied, ie: only fields updatable should be included
-	GraphValue filterUpdate(T)(T value) {
+	GraphValue filterUpdate(T)(T value, bool initFilters = true) {
+        if (initFilters) defineFilters;
         static if (is(T == GraphValue)) 
             alias gValue = value;
         else  
@@ -203,8 +218,13 @@ class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestA
 	}
 
 	/// Returns a GraphValue of the given value with both the update and the access filters applied, ie: only fields updatable and accessible by the context should be included
-	GraphValue filter(T)(T value) {
-        return filterUpdate(filterAccess(value));
+	GraphValue filter(T)(T value) 
+    in {
+        assert(model, "ModelSerializer filter was called but no model has been set");
+    } 
+    body {
+        defineFilters;
+        return filterUpdate(filterAccess(value, false), false);
 	}
     
 	/// Prepare the model for serialization
@@ -217,6 +237,7 @@ class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestA
 	override GraphValue serialize() {
 		auto value = serializeModel();
 
+        defineFilters;
 		value = filterAccess(value);
 
 		if(_updateAttributes.hasChildren) {
@@ -232,10 +253,11 @@ class RestApiModelSerializer(M : GraphModelInterface) : BaseApiSerializer, RestA
 	}
 
 protected: 
-	void reset() {
+	void resetFilters() {
 		_accessAttributes = new AttributeTree;
 		_updateAttributes = new AttributeTree;
 	}
+
 private:
     M _model;
     

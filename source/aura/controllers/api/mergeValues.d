@@ -9,8 +9,22 @@ import aura.graph.value;
 import aura.graph.model;
 import aura.data.json;
 
-void mergeValues(S : RestApiModelSerializerInterface, M : GraphModelInterface, T)(RestApiSerializer serializer, M model, T updates) {
-    auto modelSerializer = serializer.modelSerializer!(M, S);
+/// Adds the model to the RestApiSerializer and merges in the given Json values
+void mergeValues(S : RestApiModelSerializerInterface, M : GraphModelInterface, T)(RestApiSerializer restSerializer, M model, T updates) 
+in {
+    assert(model);
+}
+body {
+    import std.stdio;
+    import colorize;
+
+
+    restSerializer.addModel!S(model);
+    auto modelSerializer = restSerializer.modelSerializer!(M, S);
+    assert(modelSerializer);
+    modelSerializer.model = model;
+    writeln(updates.toPrettyString);
     auto filteredUpdates = modelSerializer.filter(updates);
+    writeln(filteredUpdates.formatPretty);
     model.merge(filteredUpdates);
 }

@@ -34,8 +34,10 @@ GraphValue filterKeys(alias shouldInclude = (string[]) => true)(GraphValue origi
 }
 
 /// Returns a GraphValue without any of the keys specified with attributes
-GraphValue filterOut(ref GraphValue original, AttributeTree attributes)
+GraphValue filterOut(ref GraphValue original, AttributeTree attributes, string file = __FILE__, typeof(__LINE__) line = __LINE__)
 in { 
+    import std.format;
+    assert(attributes, format("null attribute tree passed to filterOut (%s:%s)", file, line));
     assert(original.isObject); 
 } 
 body {	
@@ -43,8 +45,10 @@ body {
 }
 
 /// Returns a GraphValue that only has keys that are part of the given attributes
-GraphValue filterIn(ref GraphValue original, AttributeTree attributes) 
+GraphValue filterIn(ref GraphValue original, AttributeTree attributes, string file = __FILE__, typeof(__LINE__) line = __LINE__) 
 in { 
+    import std.format;
+    assert(attributes, format("null attribute tree passed to filterIn (%s:%s)", file, line));
     assert(original.isObject); 
 } 
 body {	
