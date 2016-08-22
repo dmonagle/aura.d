@@ -157,7 +157,8 @@ M copyGraphAttributes(M : GraphModelInterface)(M dest, M source) {
 /// Merge the GraphValue data into the given model
 M merge(M : GraphModelInterface)(M model, GraphValue data) {
 	auto attributes = serializeToGraphValue(model);
-	auto newModel = deserializeGraphValue!M(aura.graph.value.helpers.merge(attributes, data));
+	auto mergedAttributes = aura.graph.value.helpers.merge(attributes, data);
+	auto newModel = deserializeGraphValue!M(mergedAttributes);
 	model.copyGraphAttributes(newModel);
 	
 	return model;
@@ -230,11 +231,6 @@ version (unittest) {
 		person.merge(data);
 		assert(person.surname == "Monagle");
 		assert(person.firstName == "David");
-		
-		import std.stdio;
-		import colorize;
-		writefln("%s".color(fg.light_magenta), person.serializeToPrettyJson);
-
 		assert(person.wage == 42.2);
 	}
 }

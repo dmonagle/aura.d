@@ -136,5 +136,5 @@ unittest {
 
 	child1.name = "RenamedChild1";
 
-	at.prettyPrint;
+	//at.prettyPrint;
 }

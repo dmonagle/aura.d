@@ -114,12 +114,14 @@ unittest {
 	}
 	struct Test {
 		int number;
+		double doubleNumber;
 		string text;
 		@optional Embedded[] grades;
 	}
 
 	Test test;
 	test.number = 5;
+	test.doubleNumber = 42.2;
 	test.text = "Hello";
 	test.grades ~= Embedded(9, "IT");
 	test.grades ~= Embedded(8, "Maths");
@@ -127,15 +129,18 @@ unittest {
 
 	assert(result.isObject);
 	assert(result["number"] == 5);
+	assert(result["doubleNumber"] == 42.2);
 	assert(result["text"] == "Hello");
 
 	GraphValue data = GraphValue.emptyObject;
 	data["number"] = 17;
+	data["doubleNumber"] = 42.2;
 	data["text"] = "DM";
 	data["grades"] = GraphValue.emptyArray;
 	data["grades"].append(["score": GraphValue("24.0"), "subject": GraphValue("Physics")]);
 	auto dTest = deserialize!(GraphValueSerializer, Test)(data);
 	assert(dTest.number == 17);
+	assert(dTest.doubleNumber == 42.2);
 	assert(dTest.text == "DM");
 }
 

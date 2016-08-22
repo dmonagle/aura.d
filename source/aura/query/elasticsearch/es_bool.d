@@ -57,9 +57,6 @@ protected:
 alias EsBool = EsBoolTemplate!(["must", "filter", "should", "should_not"]);
 
 unittest {
-	import std.stdio;
-	import colorize;
-	
 	auto query = EsBool((b) {
 		assert(b.empty);
 		b.must(["David": "Ginny"]);
@@ -68,7 +65,5 @@ unittest {
 		b.filter(["Mia": false]);
 		//or.add(MongoOr.build.add(["nested": true]));
 	});
-	
-	writeln(query.toPrettyString.color(fg.green));
 }
 

@@ -126,8 +126,6 @@ version (unittest) {
 	}
 
 	unittest {
-		import std.stdio;
-		import colorize;
 		import aura.data.json.convenience;
 		
 		auto user = new TestUser;
@@ -141,7 +139,6 @@ version (unittest) {
 		s.context = user;
 
 		auto serialized = s.toJson;
-		writeln(serialized.toPrettyString.color(fg.light_blue));
 
 		assert(isObject(serialized));
 		auto readOnly = serialized["_readOnly"];
