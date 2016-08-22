@@ -6,6 +6,8 @@ import std.path;
 import std.stdio;
 import std.format;
 
+import vibe.core.log;
+
 void writeJsonConfig(Json config, string configFileName, bool force = false) {
 	if (!exists(configFileName) || force) {
 		mkdirRecurse(dirName(configFileName));
@@ -67,14 +69,14 @@ Json loadJsonConfig(string path, string configName) {
 				auto supplementalConfig = parseJsonString(jsonString);
 
 				if (config[key].type == Json.Type.object) {
-					writefln("Merging %s", key);
+					logDebugV("Config Merging %s", key);
 					config[key] = config[key].jsonMerge(supplementalConfig);
 				}
 				else {
-					writefln("Overwriting %s", key);
+					logDebugV("Config Overwriting %s", key);
 					config[key] = supplementalConfig;
 				}				
-				writefln("%s: %s", key, config);
+				logDebugV("%s: %s", key, config);
 			}
 		}
 	}
