@@ -25,10 +25,6 @@ import std.format;
 interface GraphInstanceInterface {
 	@ignore @property inout(Graph) graph() inout;
 	@property void graph(Graph value);
-
-	@ignore deprecated final @property inout(Graph) graphInstance() inout { return graph; }
-	deprecated final @property void graphInstance(Graph value) { graph(value); }
-
 }
 
 
@@ -84,10 +80,10 @@ class Graph : GraphEventListener {
 	}
 	
 	/// Removes the given model from the graph, has no effect if the model is not part of the graph
-	void remove(M : GraphModelInterface)(M model)
+	void remove(M : GraphModelInterface)(M model, string file = __FILE__, typeof(__LINE__) line = __LINE__)
 	in {
 		assert (model.graphType == M.stringof, "class " ~ M.stringof ~ "'s graphType does not match the classname: " ~ model.graphType);
-		assert (model.graph is this);
+		assert(model.graph is this, format("Called graph.remove on instance of %s but it's graph property did not match  %s(%s)", M.stringof, file, line));
 	}
 	body {
 		modelStore!(M).removeModel(model);
@@ -302,6 +298,7 @@ version (unittest) {
 		assert(graph.modelStore!Human.length == 1);
 		
 		auto ginny = graph.inject(new Human()); // Default is no snapshot
+		assert(ginny.graph);
 		ginny.name = "Ginny";
 		ginny.title = "Miss";
 		assert(graph.modelStore!Human.length == 2);
@@ -321,6 +318,7 @@ version (unittest) {
 		assert(ginny.title == "Miss");
 		assert(oldGinny is ginny);
 		
+		assert(ginny.graph);
 		graph.remove(ginny);
 		assert(graph.modelStore!Human.length == 1);
 	}

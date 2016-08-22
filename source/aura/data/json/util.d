@@ -12,16 +12,16 @@ Json wrap(Json content, string key) {
 
 unittest {
 	auto j = Json.emptyObject;
-	j.name = "Jenny";
-	j.age = 21;
+	j["name"] = "Jenny";
+	j["age"] = 21;
 	
 	auto w = j.wrap("person");
 	
-	assert(w.person.name == "Jenny");
+	assert(w["person"]["name"] == "Jenny");
 	
 	// The wrapped object contains the actual original object, not a duplicate
-	w.person.name = "Jason";
-	assert(j.name == "Jason");
+	w["person"]["name"] = "Jason";
+	assert(j["name"] == "Jason");
 }
 
 /// Return true if the passed Json object is undefined or null

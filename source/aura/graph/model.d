@@ -186,8 +186,10 @@ in {
 }
 body {
 	if (!model.graphHasSnapshot) return;
+	auto graph = model.graph;
 	auto reverted = deserializeGraphValue!M(model.graphSnapshot);
 	model.copyGraphAttributes(reverted);
+	model.graph = graph;
 }
 
 /// Returns a `GraphValue` with the difference between the current state and the snapshot
@@ -213,7 +215,7 @@ version (unittest) {
 		string firstName;
 		string surname;
 		int age;
-		double wage;
+		double wage = 0;
 
 		override @property string graphId() const { return _id; }
 		override @property void graphId(string newId) { _id = newId; }
@@ -224,9 +226,16 @@ version (unittest) {
 		person.surname = "Monagle";
 		auto data = GraphValue.emptyObject;
 		data["firstName"] = "David";
+		data["wage"] = 42.2;
 		person.merge(data);
 		assert(person.surname == "Monagle");
 		assert(person.firstName == "David");
+		
+		import std.stdio;
+		import colorize;
+		writefln("%s".color(fg.light_magenta), person.serializeToPrettyJson);
+
+		assert(person.wage == 42.2);
 	}
 }
 

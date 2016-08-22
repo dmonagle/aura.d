@@ -35,22 +35,22 @@ Json jsonDup(alias shouldInclude = (string[]) => true)(Json original, string[] p
 unittest {
 	auto a = Json.emptyObject;
 	
-	a.greeting = "hello";
-	a.array = Json.emptyArray;
-	a.array ~= 27;
-	a.array ~= 45;
+	a["greeting"] = "hello";
+	a["array"] = Json.emptyArray;
+	a["array"] ~= 27;
+	a["array"] ~= 45;
 	auto o = Json.emptyObject;
-	o.car = Json.emptyObject;
-	o.car.doors = 4;
-	a.array ~= o;
+	o["car"] = Json.emptyObject;
+	o["car"]["doors"] = 4;
+	a["array"] ~= o;
 	
 	auto b = jsonDup(a);
 	
 	assert(b.toString() == a.toString());
 	
-	b.greeting = "yo";
-	assert(a.greeting == "hello");
+	b["greeting"] = "yo";
+	assert(a["greeting"] == "hello");
 	
-	b.greeting = "yo";
-	assert(a.greeting == "hello");
+	b["greeting"] = "yo";
+	assert(a["greeting"] == "hello");
 }
