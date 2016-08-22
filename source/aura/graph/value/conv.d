@@ -22,6 +22,7 @@ T fromGraphValue(T)(const GraphValue value) {
 
 T fromGraphValue(T : double)(GraphValue value) {
 	return value.tryVisit!(
+		(double) => value.get!double,
 		(int) => value.get!int.to!double,
 		(long) => value.get!long.to!double,
 		(string v) => value.get!string.to!double,
