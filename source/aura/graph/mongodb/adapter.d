@@ -135,13 +135,16 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 		Bson bsonModel;
 
 		// If we are going to allow embedded ids, this is where we ensure them?
+			import colorize;
 		if(model.isNew) {
 			ensureId(model);
 			bsonModel = serialize(model);
+			if (M.stringof == "Contact") logDebug("GraphMongoAdapter: Inserting into collection %s: %s".color(fg.light_yellow), cName, bsonModel.toString);
 			logDebugV("GraphMongoAdapter: Inserting into collection %s: %s", cName, bsonModel.toString);
 			collection.insert(bsonModel);
 		} else {
 			bsonModel = serialize(model);
+			if (M.stringof == "Contact") logDebug("Upserting %s into collection %s: %s".color(fg.light_yellow), model.graphState.id, cName, bsonModel.toString);
 			logDebugV("Upserting %s into collection %s: %s", model.graphState.id, cName, bsonModel.toString);
 			collection.update(["_id": bsonModel["_id"]], bsonModel, UpdateFlags.Upsert);
 		}
