@@ -11,7 +11,7 @@ import vibe.core.log;
 import std.typecons;
 
 class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
-	static Bson serialize(M : GraphStateInterface)(const M model) {
+	static Bson serialize(M : GraphStateInterface)(M model) {
 		auto bsonModel = model.serializeToBson;
 		if (model.graphState.validId) bsonModel["_id"] = BsonObjectID.fromString(model.graphState.id);
 		
