@@ -121,8 +121,10 @@ class GraphElasticsearchAdapter(M ...) : GraphAdapter!M {
                     ModelType model;
                     model.deserializeJson(source);
                     model.graphId = data["_id"].get!string;
-					model.graphMeta["ES_score"] = data["_score"].get!double;
-					logInfo("Setting score to %s", data["_score"]);
+					if (data["_score"].type == Json.Type.float_) {
+						model.graphMeta["ES_score"] = data["_score"].get!double;
+						logDebug("Setting score to %s", data["_score"]);
+					}
                     return model;
 			}
 			default: assert(false, format("Type '%s' not supported by adapter", graphType));
