@@ -10,10 +10,15 @@ module aura.graph.mongodb.model;
 import aura.graph;
 import vibe.data.bson;
 
+import std.format;
+
 class GraphMongoModel : GraphModel {
 	@optional {
 		override @ignore @property string graphId() const { return _id.toString; }
-		override @property void graphId(string newId) { _id = BsonObjectID.fromString(newId); }
+		override @property void graphId(string newId) {
+			assert(newId.length == 24, format("Attempt to create BsonId from '%s'", newId)); 
+			_id = BsonObjectID.fromString(newId); 
+		}
 
 		@property BsonObjectID _id() const { return _modelId; }
 		@property void _id(BsonObjectID value) { 
