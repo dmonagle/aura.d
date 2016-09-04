@@ -28,7 +28,7 @@ class GraphResolver(T) : GraphResolverInterface {
 	@property void value(T newValue) {
         _value = newValue;
     }
-	
+
 	alias value this;
 	
 private:

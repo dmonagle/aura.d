@@ -15,16 +15,10 @@ in {
     assert(model);
 }
 body {
-    import std.stdio;
-    import colorize;
-
-
     restSerializer.addModel!S(model);
     auto modelSerializer = restSerializer.modelSerializer!(M, S);
     assert(modelSerializer);
     modelSerializer.model = model;
-    writeln(updates.toPrettyString);
     auto filteredUpdates = modelSerializer.filter(updates);
-    writeln(filteredUpdates.formatPretty);
     model.merge(filteredUpdates);
 }
