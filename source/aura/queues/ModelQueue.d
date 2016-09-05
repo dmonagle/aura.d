@@ -36,7 +36,7 @@ class ModelQueue(Model) {
 				_workersBusy++;
 				auto model = queue.front;
 				queue.popFront();
-				logInfo("%s worker: Queue: %s Processing...".color(fg.light_magenta), Model.stringof, queue.length);
+				logDebugV("%s worker: Queue: %s Processing...".color(fg.light_magenta), Model.stringof, queue.length);
 
 				try {
 					_modelAction(model);
@@ -50,7 +50,7 @@ class ModelQueue(Model) {
 				sleep(200.msecs);
 			}
 		}
-		logInfo("%s worker finishing".color(fg.magenta), Model.stringof);
+		logDebugV("%s worker finishing".color(fg.magenta), Model.stringof);
 	}
 	
 	void start(void delegate(Model model) modelAction) {
