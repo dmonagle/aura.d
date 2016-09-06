@@ -26,6 +26,16 @@ subPackage {
     dependency "feature-test-d" version="~>1.0.3"
 }
 
+dependency ":aws" version="*"
+subPackage {
+    name "aws"
+    description "Amazon AWS"
+    targetType "library"
+    sourcePaths "source/aura/aws"
+    importPaths "source"
+    targetPath "build"
+}
+
 dependency ":configuration" version="*"
 subPackage {
     name "configuration"
