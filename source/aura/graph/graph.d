@@ -129,6 +129,12 @@ class Graph : GraphEventListener {
 		clearModelStore!M;
 	}
 
+	/// Instantiates a listener of type `T` and registers it with this graph
+	void registerGraphEventListener(T : GraphEventListener)() {
+		registerGraphEventListener(new T());
+	}
+
+
 	/// Registers a listener with this graph
 	void registerGraphEventListener(GraphEventListener listener) {
 		if (!_graphEventListeners.canFind(listener)) {
