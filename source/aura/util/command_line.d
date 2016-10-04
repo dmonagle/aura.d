@@ -23,6 +23,9 @@ T convertCommandLineParameter(T)(string param) {
         if (!param.length) return false;
         return ['T', 'Y'].canFind(param[0].toUpper);
     }
+    else static if (is(T == string[])) {
+        return param.split(" ");
+    }
     else static if (is(T == Date)) 
     {           
         try {
