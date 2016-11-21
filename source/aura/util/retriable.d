@@ -26,6 +26,7 @@ class Retriable {
     /// Returns true if the request was successfully completed
     bool request(E = RequestException)(void delegate() action, bool delegate(E) isRetriable) {
         auto retryMax = (retryConfig.count == 0) ? 1 : retryConfig.count;
+        E exception;
         
         for(int retry; retry < retryMax; retry++) {
 
@@ -36,18 +37,18 @@ class Retriable {
 
                 action();                
 
-                return true;    // action was successfully completed
+                return true;    // action completed successfully 
 
             } catch (E e) {
-                logInfo(e.msg);
-
+                exception = e;
                 if (isRetriable(e)) continue;
 
                 break;
             }
         }
 
-        return false;   // action was failed to complete
+        logError("Request failed after tried %s times with interval %s : %s", retryMax, retryConfig.interval, exception.msg);
+        return false;   // action failed after retries
     }
 
     /// Returns true if the request was successfully completed
