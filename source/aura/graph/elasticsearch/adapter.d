@@ -2,6 +2,7 @@
 
 import aura.graph.core.model;
 import aura.graph.core.adapter;
+import aura.util.retriable;
 
 import elasticsearch;
 
@@ -61,7 +62,10 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 		}
 	}
 
-	Json search(M)(string searchBody, ESParams params = ESParams()) {
+	Json search(M)(string searchBody, ESParams params = ESParams(), Retriable retriable = null) {
+
+		if (!retriable) retriable = new Retriable(this._retryConfig);
+
 		params["body"] = searchBody;
 		params["index"] = indexName(containerName!M);
 		if ("type" !in params)
@@ -70,22 +74,39 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 			// If the type is specified as blank, remove the type
 			if (!params["type"].length) params.remove("type");
 		}
-		
-		auto response = client.search(params);
+				
+		Response response;
+		bool success = retriable.request(() {
+			response = client.search(params);
+		});
+
+		if (!success) return Json.emptyObject;
 		
 		return response.jsonBody;
 	}
 
-	Json scroll(string scroll_id, ESParams params = ESParams()) {
+	Json scroll(string scroll_id, ESParams params = ESParams(), Retriable retriable = null) {
+
+		if (!retriable) retriable = new Retriable(this._retryConfig);
+
 		params["scroll_id"] = scroll_id;
 		if ("scroll" !in params) params["scroll"] = "1m";
 		if ("size" !in params) params["size"] = "2000";		
 
-		auto response = client.scroll(params);
+		Response response;
+		bool success = retriable.request(() {
+			response = client.scroll(params);
+		});
+
+		if (!success) return Json.emptyObject;
+
 		return response.jsonBody;
 	}
 
-	bool save(M : GraphStateInterface)(M model) {
+	bool save(M : GraphStateInterface)(M model, Retriable retriable = null) {
+
+		if (!retriable) retriable = new Retriable(this._retryConfig);
+
 		static if (__traits(compiles, model.toIndexedJson)) {
 			auto json = model.toIndexedJson;
 		}
@@ -95,13 +116,23 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 
 		json.remove("_type");
 		json.remove("_id");
-		client.index(indexName(containerName!M), model.graphType, model.graphState.id, json.toString);
+
+		retriable.request(() {
+			client.index(indexName(containerName!M), model.graphType, model.graphState.id, json.toString);
+		});
+
 		return true;
 	}
 
 	/// Removes the model from the database
-	bool remove(M : GraphStateInterface)(M model) {
-		client.delete_(indexName(containerName!M), model.graphType, model.graphState.id);
+	bool remove(M : GraphStateInterface)(M model, Retriable retriable = null) {
+
+		if (!retriable) retriable = new Retriable(this._retryConfig);
+		
+		retriable.request(() {
+			client.delete_(indexName(containerName!M), model.graphType, model.graphState.id);
+		});
+
 		return true;
 	}
 
@@ -113,6 +144,9 @@ class GraphEsAdapter(M ...) : GraphAdapter!(M) {
 	M find(M : GraphStateInterface)(string id) {
 		assert("The EsAdapter does not currently support lookup up models");
 	}
+
+protected:
+	RetryConfig _retryConfig;
 
 private:
 	Client _client;
