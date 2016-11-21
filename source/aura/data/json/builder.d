@@ -30,9 +30,9 @@ class JsonObjectBuilder : JsonBuilderBase {
 
 unittest {
 	auto j = JsonObjectBuilder((j) {
-		j.test = "Hello";
+		j["test"] = "Hello";
 	});
 
+	assert(j["test"].to!string == "Hello");
 	assert(is(typeof(j.json) == Json));
-	assert(j.test.to!string == "Hello");
 }
