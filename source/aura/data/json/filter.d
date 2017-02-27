@@ -35,22 +35,22 @@ Json jsonFilterOut(const string separator = ".")(Json original, string[] filters
 unittest {
 	auto model = Json.emptyObject;
 	
-	model.make = "Ford";
-	model.model = "Falcon";
-	model.wholesale = 5;
-	model.retail = 5000;
-	model.engine = Json.emptyObject;
-	model.engine.capacity = 4000;
-	model.engine.value = 100;
+	model["make"] = "Ford";
+	model["model"] = "Falcon";
+	model["wholesale"] = 5;
+	model["retail"] = 5000;
+	model["engine"] = Json.emptyObject;
+	model["engine"]["capacity"] = 4000;
+	model["engine"]["value"] = 100;
 	
 	auto filtered = jsonFilterOut(model, "wholesale", "retail", "engine.value");
-	assert(filtered.make == "Ford");
+	assert(filtered["make"] == "Ford");
 	assert("wholesale" !in filtered);
 	assert("retail" !in filtered);
-	assert(filtered.engine.capacity == 4000);
-	assert("value" !in filtered.engine);
+	assert(filtered["engine"]["capacity"] == 4000);
+	assert("value" !in filtered["engine"]);
 	
-	assert(model.retail == 5000);
+	assert(model["retail"] == 5000);
 }
 
 Json jsonFilterIn(const string separator = ".")(Json original, string[] filters ...) 
@@ -77,20 +77,20 @@ in { assert(original.type == Json.Type.object); } body {
 unittest {
 	auto model = Json.emptyObject;
 	
-	model.make = "Ford";
-	model.model = "Falcon";
-	model.wholesale = 5;
-	model.retail = 5000;
-	model.engine = Json.emptyObject;
-	model.engine.capacity = 4000;
-	model.engine.value = 100;
+	model["make"] = "Ford";
+	model["model"] = "Falcon";
+	model["wholesale"] = 5;
+	model["retail"] = 5000;
+	model["engine"] = Json.emptyObject;
+	model["engine"]["capacity"] = 4000;
+	model["engine"]["value"] = 100;
 	
 	auto filtered = jsonFilterIn(model, "model", "engine.capacity");
 	
-	assert(filtered.model == "Falcon");
+	assert(filtered["model"] == "Falcon");
 	assert("make" !in filtered);
-	assert(filtered.engine.capacity == 4000);
-	assert("value" !in filtered.engine);
+	assert(filtered["engine"]["capacity"] == 4000);
+	assert("value" !in filtered["engine"]);
 }
 
 /// Returns a Json object that only has keys that are part of the given attributes
@@ -104,20 +104,20 @@ in { assert(original.type == Json.Type.object); } body {
 unittest {
 	auto model = Json.emptyObject;
 	
-	model.make = "Ford";
-	model.model = "Falcon";
-	model.wholesale = 5;
-	model.retail = 5000;
-	model.engine = Json.emptyObject;
-	model.engine.capacity = 4000;
-	model.engine.value = 100;
+	model["make"] = "Ford";
+	model["model"] = "Falcon";
+	model["wholesale"] = 5;
+	model["retail"] = 5000;
+	model["engine"] = Json.emptyObject;
+	model["engine"]["capacity"] = 4000;
+	model["engine"]["value"] = 100;
 	
 	auto filtered = model.filterIn(["model", "engine.capacity"].serializeToAttributeTree);
 	
-	assert(filtered.model == "Falcon");
+	assert(filtered["model"] == "Falcon");
 	assert("make" !in filtered);
-	assert(filtered.engine.capacity == 4000);
-	assert("value" !in filtered.engine);
+	assert(filtered["engine"]["capacity"] == 4000);
+	assert("value" !in filtered["engine"]);
 }
 
 /// Returns a Json object without any of the keys specified with attributes
@@ -131,22 +131,22 @@ in { assert(original.type == Json.Type.object); } body {
 unittest {
 	auto model = Json.emptyObject;
 	
-	model.make = "Ford";
-	model.model = "Falcon";
-	model.wholesale = 5;
-	model.retail = 5000;
-	model.engine = Json.emptyObject;
-	model.engine.capacity = 4000;
-	model.engine.value = 100;
+	model["make"] = "Ford";
+	model["model"] = "Falcon";
+	model["wholesale"] = 5;
+	model["retail"] = 5000;
+	model["engine"] = Json.emptyObject;
+	model["engine"]["capacity"] = 4000;
+	model["engine"]["value"] = 100;
 	
 	auto filtered = model.filterOut(["wholesale", "retail", "engine.value"].serializeToAttributeTree);
-	assert(filtered.make == "Ford");
+	assert(filtered["make"] == "Ford");
 	assert("wholesale" !in filtered);
 	assert("retail" !in filtered);
-	assert(filtered.engine.capacity == 4000);
-	assert("value" !in filtered.engine);
+	assert(filtered["engine"]["capacity"] == 4000);
+	assert("value" !in filtered["engine"]);
 	
-	assert(model.retail == 5000);
+	assert(model["retail"] == 5000);
 }
 
 /// Removes any keys from the Json struct that don't meet the keyFilter requirement

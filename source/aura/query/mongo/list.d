@@ -38,7 +38,7 @@ unittest {
 	auto list = j["$list"];
 	assert(list.type == Json.Type.Array);
 	assert(list.length == 2);
-	assert(list[0].value.to!int == 1);
-	assert(list[1].value.to!int == 2);
+	assert(list[0]["value"].to!int == 1);
+	assert(list[1]["value"].to!int == 2);
 }
 

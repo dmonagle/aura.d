@@ -75,19 +75,19 @@ struct ApiModelParams {
 
 unittest {
 	auto bson = Bson.emptyObject;
-	bson.firstName = "David";
-	bson.surname = "Monagle";
-	bson.level = 17;
+	bson["firstName"] = "David";
+	bson["surname"] = "Monagle";
+	bson["level"] = 17;
 	
 	auto params = Json(["level": Json(20)]);
 	
 	auto modelParams = ApiModelParams(params, bson);
 	assert(modelParams.fieldChanged("level"));
 	assert(!modelParams.fieldChanged("nonExistant"));
-	assert(modelParams.merged.level.to!long == 20);
+	assert(modelParams.merged["level"].to!long == 20);
 	
 	modelParams.filterOut("level");
 	assert(!modelParams.fieldChanged("level"));
-	assert(modelParams.updates.level.type == Bson.Type.null_);
-	assert(modelParams.merged.level.to!int == 17);
+	assert(modelParams.updates["level"].type == Bson.Type.null_);
+	assert(modelParams.merged["level"].to!int == 17);
 }
