@@ -10,6 +10,7 @@ class EsBool : JsonBuilderBase {
 		_json["must"] = Json.emptyArray;
 		_json["must_not"] = Json.emptyArray;
 		_json["should"] = Json.emptyArray;
+		_json["filter"] = Json.emptyArray;
 	}
 	
 	EsBool must(T : Json)(T criteria) {
@@ -50,11 +51,25 @@ class EsBool : JsonBuilderBase {
 	EsBool should(T)(T criteria) {
 		return should(serializeToJson(criteria));
 	}
+
+	EsBool filter(T : Json)(T criteria) {
+		_json["filter"] ~= criteria;
+		return this;
+	}
+	
+	EsBool filter(T : string)(T criteria) {
+		return filter(criteria.parseJsonString);
+	}
+
+	EsBool filter(T)(T criteria) {
+		return filter(serializeToJson(criteria));
+	}
 	
 	@property bool empty() {
 		if (_json["must"].length) return false;
 		if (_json["must_not"].length) return false;
 		if (_json["should"].length) return false;
+		if (_json["filter"].length) return false;
 		return true;
 	}
 	
@@ -64,6 +79,7 @@ class EsBool : JsonBuilderBase {
 		if (_json["must"].length) j["must"] = _json["must"];
 		if (_json["must_not"].length) j["must_not"] = _json["must_not"];
 		if (_json["should"].length) j["should"] = _json["should"];
+		if (_json["filter"].length) j["filter"] = _json["filter"];
 		
 		return j;
 	}
