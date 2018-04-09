@@ -97,7 +97,7 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 	auto queryCursor(ModelType, Q)(Q query, QueryFlags flags = QueryFlags.None) {
 		auto collection = getCollection!ModelType;
 		logDebugV("Querying %s : '%s'", containerName!ModelType, query.to!string);
-		return collection.find(query, flags);
+		return collection.find(query, null, flags);
 	}
 
 	auto queryCursor(ModelType)(QueryFlags flags = QueryFlags.None) {
