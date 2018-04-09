@@ -94,14 +94,14 @@ class GraphMongoAdapter(M ...) : GraphAdapter!(M) {
 	}
 
 	/// Returns a MongoCursor based on the given ModelType and query
-	auto queryCursor(ModelType, Q)(Q query) {
+	auto queryCursor(ModelType, Q)(Q query, QueryFlags flags = QueryFlags.None) {
 		auto collection = getCollection!ModelType;
 		logDebugV("Querying %s : '%s'", containerName!ModelType, query.to!string);
-		return collection.find(query);
+		return collection.find(query, flags);
 	}
 
-	auto queryCursor(ModelType)() {
-		return queryCursor!ModelType(Bson.emptyObject);
+	auto queryCursor(ModelType)(QueryFlags flags = QueryFlags.None) {
+		return queryCursor!ModelType(Bson.emptyObject, flags);
 	}
 
 	/// Deserializes all results of a cursor to the given model
